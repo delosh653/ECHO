@@ -33,9 +33,13 @@ install.packages("colorRamps")
 install.packages("fields")
 
 This will install these packages (a set of functions that this application uses) onto your computer. This may ask for your input, so just say yes to the questions asked. If you run into errors saying “yes,” just say no instead. Note: this may take some time.
+
 6.	Open app.R, which should be included in the .zip file you downloaded and also contained this README. It should open in the top left window of your RStudio session.
+
 7.	In the top right corner of the app.R window, you should see the button, “Run App”. Click on the small downwards arrow next to it and choose “Run External”. 
+
 8.	Now click “Run App”. This should open the ECHO application in your now default browser window (either Firefox or Chrome). The picture below is a representation in Firefox.
+
 9.	Have fun!
 
 ** Why do I have to install either Firefox or Chrome, you ask? Why not Internet Explorer, or some other browser? Well, it is known there are problems downloading files when viewing shiny apps in Internet Explorer, so we definitely want to avoid that. However, I have not tested this app in browsers like Microsoft Edge, Safari, etc. If you can verify that these work, please let me know at delosh@rpi.edu.
@@ -45,13 +49,13 @@ This will install these packages (a set of functions that this application uses)
 As you may have noticed, this is still in beta testing! Therefore, we would love to hear your feedback on the program. For general feedback, email delosh@rpi.edu with the subject line "ECHO Feedback".
 
 If you run into any errors, please email delosh@rpi.edu with the following (subject line: ECHO Error): 
-- a short desciption of your problem 
+- a short desciption of your problem
 - ECHO version number 
 - your dataset/file(s) 
 - your exact settings for the run (a screenshot will do) 
 - your exact error from the console window (a screenshot will do) 
 
 Contact:
-Hannah De los Santos
-delosh@rpi.edu
+Hannah De los Santos /
+email: delosh@rpi.edu /
 Rensselaer Polytechnic Institute
