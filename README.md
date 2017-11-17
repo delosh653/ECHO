@@ -8,12 +8,12 @@ We also can also run another common circadian rhythm detection system, JTK_CYCLE
 
 # Use and First-Time Set-Up Instructions
 
-Thank you for downloading ECHO (Extended Circadian Harmonic Oscillations)! ECHO is is an app designed to find and identify circadian rhythms from your data, then visualize the results. This guide will lead you in first time set-up and use. Pictures have been provided for ease of use, using Windows 7, in the files ECHO README.docx and ECHO_README.pdf, found above. An asterisk indicates the step has an explanation below, and a tilde indicates the step is first-time set up only.
+Thank you for downloading ECHO (Extended Circadian Harmonic Oscillations)! ECHO is is an app designed to find and identify circadian rhythms from your data, then visualize the results. This guide will lead you in first time set-up and use. Pictures have been provided for ease of use, using Windows 7, in the files ECHO README.docx and ECHO_README.pdf, found above. A double asterisk indicates the step has an explanation below, and a tilde indicates the step is first-time set up only.
 
 Last updated: 11/17/17 (ECHO version 0.3)
 
 Steps: 
-1.	*~ Download Firefox (https://www.mozilla.org/en-US/firefox/new/) or Chrome (https://www.google.com/chrome/browser/desktop/index.html) and make it your default browser.
+1.	** ~ Download Firefox (https://www.mozilla.org/en-US/firefox/new/) or Chrome (https://www.google.com/chrome/browser/desktop/index.html) and make it your default browser.
 2.	~ Download R, if you do not already have it: https://www.r-project.org/
 3.	~ Download RStudio, if you do not already have it (RStudio Desktop is sufficient): https://www.rstudio.com/products/rstudio/download/
 4.	Open RStudio.
@@ -38,7 +38,7 @@ This will install these packages (a set of functions that this application uses)
 8.	Now click “Run App”. This should open the ECHO application in your now default browser window (either Firefox or Chrome). The picture below is a representation in Firefox.
 9.	Have fun!
 
-* Why do I have to install either Firefox or Chrome, you ask? Why not Internet Explorer, or some other browser? Well, it is known there are problems downloading files when viewing shiny apps in Internet Explorer, so we definitely want to avoid that. However, I have not tested this app in browsers like Microsoft Edge, Safari, etc. If you can verify that these work, please let me know at delosh@rpi.edu.
+** Why do I have to install either Firefox or Chrome, you ask? Why not Internet Explorer, or some other browser? Well, it is known there are problems downloading files when viewing shiny apps in Internet Explorer, so we definitely want to avoid that. However, I have not tested this app in browsers like Microsoft Edge, Safari, etc. If you can verify that these work, please let me know at delosh@rpi.edu.
 
 # Contact Information and Bug Reporting
 
