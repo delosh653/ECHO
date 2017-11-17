@@ -455,7 +455,7 @@ server <- function(input,output){ # aka the code behind the results
         opts <- list(progress = progress)
         
         # where we put the result
-        total_results <- foreach (i=1:nrow(genes), .combine = rbind, .packages='minpack.lm') %dopar% {
+        total_results <- foreach (i=1:nrow(genes), .combine = rbind, .packages='minpack.lm',.options.snow = opts) %dopar% {
           calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr,use_exact = use_exact,jtklist)
         }
         close(pb)
