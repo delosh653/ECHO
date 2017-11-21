@@ -414,7 +414,6 @@ calc_tau_and_p_jtk <- function(ref_waveform,times,num_reps,current_gene,jtklist)
 #  low: the highest frequency we are looking for, in radians (lowest period)
 #  high: the lowest frequency we are looking for, in radians (highest period)
 #  rem_unexpr: logical indicating whether genes with less than 70% expression should not be considered
-#  use_exact: logical indicating whether to use exact distribution in single replicate case
 #  jtklist: contains the exact p-value distribution for replicate data
 # outputs:
 #  results: a data frame which contains:
@@ -433,7 +432,7 @@ calc_tau_and_p_jtk <- function(ref_waveform,times,num_reps,current_gene,jtklist)
 #   pval: P-value calculated based on Kendall's tau
 #   original.values: original values for gene
 #   fitted.values: fitted values for gene
-calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,use_exact=FALSE,jtklist=list()){
+calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,jtklist=list()){
   
   if(is_smooth){ # smooth the data, if requested
     if (tied){ # if paired replicates
@@ -686,16 +685,16 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     # calculate p-value
     ref_wave <- (alt_form(a,gam,omega,phi,y_shift,times)) # fitted values
     
-    if (num_reps > 1 | (num_reps == 1 & use_exact)){ # multiple replicates
+    # if (num_reps > 1 | (num_reps == 1 & use_exact)){ # multiple replicates
       # calculate pvalue by exact JTK distribution
       taulist <- calc_tau_and_p_jtk(ref_wave,times,num_reps,current_gene,jtklist)
       tau <- taulist$tau # Kendall's tau
       pval <- taulist$pval # pvalue
-    }
-    else { # one replicate
-      tau <- calc_kendalls_tau(as.numeric(ref_wave),as.numeric(y_val)) # calculate Kendall's tau
-      pval <- calc_p_value(24,tau, TRUE) # calculate pvalue
-    }
+    # }
+    # else { # one replicate
+    #   tau <- calc_kendalls_tau(as.numeric(ref_wave),as.numeric(y_val)) # calculate Kendall's tau
+    #   pval <- calc_p_value(24,tau, TRUE) # calculate pvalue
+    # }
     
     # list of parameters and other resulting values
     if (num_reps == 1){

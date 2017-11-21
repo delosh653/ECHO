@@ -123,13 +123,6 @@ ui <- fluidPage(
                      actionButton("remove_help", icon("question", lib="font-awesome"))),tags$br(),
                  uiOutput("Help_remove"),
                  
-                 div(style="display: inline-block;",
-                     checkboxInput("use_exact", "If one replicate, use exact distribution?", value = FALSE, width = NULL)),
-                 div(style="display: inline-block; vertical-align:top;  width: 20px;",
-                     actionButton("exact_help", icon("question", lib="font-awesome"))),
-                 uiOutput("Help_exact"),
-                 
-                 
                  # action buttons for running echo code and downloading results
                  actionButton("find_rhythms", "Find Rhythms!"),tags$br(),tags$br(),
                  downloadButton("downloadECHO", "Download ECHO CSV"),
@@ -350,14 +343,6 @@ server <- function(input,output){ # aka the code behind the results
         return()
       }
     })
-    output$Help_exact=renderUI({
-      if(input$exact_help%%2){ # forcing coefficient help
-        helpText("If checked, an exact JTK distribution will be used for p-value calculations for single replicates. A normal approximation is used by default. Not recommended for intial runs.")
-      }
-      else{
-        return()
-      }
-    })
     
     
     # run echo with maybe jtk ----
@@ -387,7 +372,6 @@ server <- function(input,output){ # aka the code behind the results
           resol <- 2 # resolution of data
           timen <- seq(begin,end,resol) # the times for cicadian rhythms
           tied <- FALSE # not paired
-          use_exact <- FALSE # multiple replicates
         }
         else{ # the user's own dataset
           genes <- read.csv(input$data_file$datapath, header = TRUE)
@@ -399,7 +383,6 @@ server <- function(input,output){ # aka the code behind the results
           resol <- as.numeric(input$resol) # resolution of data
           timen <- seq(begin,end,resol) # the times for cicadian rhythms
           tied <- input$tied # the type of replicate
-          use_exact <- input$use_exact # use exact distribution in one rep case
         }
         
         # run all genes:
@@ -456,7 +439,7 @@ server <- function(input,output){ # aka the code behind the results
         
         # where we put the result
         total_results <- foreach (i=1:nrow(genes), .combine = rbind, .packages='minpack.lm',.options.snow = opts) %dopar% {
-          calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr,use_exact = use_exact,jtklist)
+          calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr,jtklist)
         }
         close(pb)
         
