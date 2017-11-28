@@ -85,7 +85,8 @@ ui <- fluidPage(
                  
                  div(style="display: inline-block;",
                      radioButtons("tied", "Type of replicates? *", choices = NULL, selected = NULL,
-                                  inline = TRUE, width = NULL, choiceNames = c("None","Paired","Unpaired"), choiceValues = c("",TRUE,FALSE))),
+                                  inline = TRUE, width = NULL, choiceNames = c("None","Paired","Unpaired"), choiceValues = c("none","TRUE","FALSE"))), 
+                 # one replicate defaults to paired replicates (smoothed without average)
                  
                  div(style="display: inline-block; vertical-align:top;  width: 20px;",
                      actionButton("tying_help", icon("question", lib="font-awesome"))),
@@ -109,7 +110,7 @@ ui <- fluidPage(
                  
                  div(style="display: inline-block;",
                      radioButtons("smooth", "Smooth data?", choices = NULL, selected = NULL,
-                                  inline = TRUE, width = NULL, choiceNames = c("No","Yes; weighted","Yes; unweighted"), choiceValues = c("nosmooth",TRUE,FALSE))),
+                                  inline = TRUE, width = NULL, choiceNames = c("No","Yes; weighted","Yes; unweighted"), choiceValues = c("nosmooth","TRUE","FALSE"))),
                  
                  div(style="display: inline-block; vertical-align:top;  width: 20px;",
                      actionButton("smooth_help", icon("question", lib="font-awesome"))),
@@ -159,7 +160,7 @@ ui <- fluidPage(
                               "- your dataset/file(s)",tags$br(),
                               "- your exact settings for the run (a screenshot will do)",tags$br(),
                               "- your exact error from the console window (a screenshot will do)",tags$br(),tags$br(),
-                              tags$p("ECHO Version 0.3")
+                              tags$p("ECHO Version 0.4")
                               ))
                               )),
                  tabPanel("About Visualizing Results",
@@ -259,7 +260,14 @@ ui <- fluidPage(
         
         selectInput("coeff","Choose Coefficient to View (for PDG)",c("Gamma","Amplitude","Omega","Period","Phase Shift","Hours Shifted", "Equilibrium Value", "Tau", "P-Value", "BH Adj P-Value", "BY Adj P-Value")),
         
-        selectInput("subset_look","Subset of Data to View (for PDG and Gene Lists)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Overdamped","Overdriven","Nonconverged","Nonstarter","No Deviation","Both","Theirs","Ours","Diff")),
+        div(style="display: inline-block;",
+            selectInput("subset_look","Subset of Data to View (for PDG and Gene Lists)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Overdamped","Overdriven","Nonconverged","Nonstarter","No Deviation","Both","Theirs","Ours","Diff"))),
+        
+        div(style="display: inline-block; vertical-align:top;  width: 20px;",
+            actionButton("subset_help", icon("question", lib="font-awesome"))),
+        uiOutput("Help_subset"),
+        
+        
         
         # action buttons for visualization and downloading results
         actionButton("go","Visualize!"),
@@ -343,6 +351,14 @@ server <- function(input,output){ # aka the code behind the results
         return()
       }
     })
+    output$Help_subset=renderUI({
+      if(input$subset_help%%2){ # forcing coefficient help
+        helpText("Identifies which subset of data to view for specified visualizations. For more information regarding what terms such as 'Both' and 'Theirs' mean, please view Venn Diagram summary. Note: Some subsets are not available if JTK_CYCLE results are not available. ")
+      }
+      else{
+        return()
+      }
+    })
     
     
     # run echo with maybe jtk ----
@@ -382,21 +398,46 @@ server <- function(input,output){ # aka the code behind the results
           end <- as.numeric(input$end) # end
           resol <- as.numeric(input$resol) # resolution of data
           timen <- seq(begin,end,resol) # the times for cicadian rhythms
-          tied <- input$tied # the type of replicate
+          if (input$tied=="none"){ # one replicate, default to true paired-ness
+            tied <- TRUE
+          } else {# more than one replicate
+            tied <- as.logical(input$tied) # the type of replicate
+          }
+          
         }
+        # normalize and store original data
+        # original_genes <- genes
+        # norm_list <- normalize_all()
+        # genes <- norm_list$dat
+        # stdevs <- norm_list$stdevs
+        # means <- norm_list$means
+        
+        # getting average data, for more than one replicate
+        avg_genes <- avg_all_rep(num_reps)
         
         # run all genes:
         rem_unexpr <- input$rem_unexpr # indicator for removing unexpressed genes
         
         # figuring out whether smoothing is wanted
-        if (typeof(input$smooth)=="character"){ # no smoothing
+        if (input$smooth=="nosmooth"){ # no smoothing
           is_smooth <- FALSE
           is_weighted <- FALSE
         }
         else{ # yes smoothing, weighted or unweighted
           is_smooth <- TRUE
-          is_weighted <- input$smooth
+          is_weighted <- as.logical(input$smooth)
+          
+          # create smoothed matrix, reassign genes
+          if(is_smooth){ # smooth the data, if requested
+            if (tied){ # if paired replicates
+              genes <- smoothing_all_tied(is_weighted, num_reps)
+            }
+            else{ # if unpaired replicates
+              genes <- smoothing_all_untied(is_weighted, num_reps)
+            }
+          }
         }
+        
         
         # figuring out whether a range is wanted, adjusting accordingly
         if (input$low ==""){ # empty low input, adjust to time series
@@ -420,11 +461,11 @@ server <- function(input,output){ # aka the code behind the results
         start.time <- Sys.time() # begin counting time
         
         # if more than one replicate or requested, an exact distribution is needed
-        if (num_reps > 1 || use_exact){ 
+        #if (num_reps > 1 ){ 
           # create exact distribution for pvalues
           jtklist <- jtkdist(length(timen), reps = num_reps) 
           jtk.alt <- list() # preallocate pvalue distribution for missing data
-        }
+        #}
         
         # prepare for parallelism
         cores = detectCores() # dectect how many processors
@@ -654,51 +695,51 @@ server <- function(input,output){ # aka the code behind the results
         df<- data.frame()
       }
       if(input$subset_look == "None"){
-        df<-as.data.frame(total_results[,1:15])
+        df<-as.data.frame(cbind(total_results[,1:15],JTK_results[,2:4]))
       }
       else if(input$subset_look == "JTK_CYCLE"){
-        df <-as.data.frame(total_results[circ_jtk,1:15])
+        df <-as.data.frame(cbind(total_results[circ_jtk,1:15],JTK_results[circ_jtk,2:4]))
         
       }
       else if(input$subset_look == "ECHO"){
-        df<-as.data.frame(total_results[circ_us,1:15])
+        df<-as.data.frame(cbind(total_results[circ_us,1:15],JTK_results[circ_us,2:4]))
         
       }
       else if(input$subset_look == "Damped"){
-        df<-as.data.frame(total_results[damped,1:15])
+        df<-as.data.frame(cbind(total_results[damped,1:15],JTK_results[damped,2:4]))
       }
       else if(input$subset_look == "Driven"){
-        df<-as.data.frame(total_results[driven,1:15])
+        df<-as.data.frame(cbind(total_results[driven,1:15],JTK_results[driven,2:4]))
       }
       else if(input$subset_look == "Harmonic"){
-        df<-as.data.frame(total_results[harmonic,1:15])
+        df<-as.data.frame(cbind(total_results[harmonic,1:15],JTK_results[harmonic,2:4]))
       }
       else if(input$subset_look == "Overdamped"){
-        df<-as.data.frame(total_results[overdamped,1:15])
+        df<-as.data.frame(cbind(total_results[overdamped,1:15],JTK_results[overdamped,2:4]))
       }
       else if(input$subset_look == "Overdriven"){
-        df<-as.data.frame(total_results[overdriven,1:15])
+        df<-as.data.frame(cbind(total_results[overdriven,1:15],JTK_results[overdriven,2:4]))
       }
       else if(input$subset_look == "Nonconverged"){
-        df<-as.data.frame(total_results[nonconv,1:15])
+        df<-as.data.frame(cbind(total_results[nonconv,1:15],JTK_results[nonconv,2:4]))
       }
       else if(input$subset_look == "Nonstarter"){
-        df<-as.data.frame(total_results[nas_found-nodev,1:15])
+        df<-as.data.frame(cbind(total_results[nas_found-nodev,1:15],JTK_results[nas_found-nodev,2:4]))
       }
       else if(input$subset_look == "No Deviation"){
-        df<-as.data.frame(total_results[nodev,1:15])
+        df<-as.data.frame(cbind(total_results[nodev,1:15],JTK_results[nodev,2:4]))
       }
       else if(input$subset_look == "Both"){
-        df<-as.data.frame(total_results[both,1:15])
+        df<-as.data.frame(cbind(total_results[both,1:15],JTK_results[both,2:4]))
       }
       else if(input$subset_look == "Theirs"){
-        df<-as.data.frame(total_results[theirs,1:15])
+        df<-as.data.frame(cbind(total_results[theirs,1:15],JTK_results[theirs,2:4]))
       }
       else if(input$subset_look == "Ours"){
-        df<-as.data.frame(total_results[ours,1:15])
+        df<-as.data.frame(cbind(total_results[ours,1:15],JTK_results[ours,2:4]))
       }
       else if(input$subset_look == "Diff"){
-        df<-as.data.frame[diff,1:15]
+        df<-as.data.frame(cbind(total_results[diff,1:15],JTK_results[diff,2:4]))
       }
       
       output$table <- renderDataTable({

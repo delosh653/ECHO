@@ -434,14 +434,14 @@ calc_tau_and_p_jtk <- function(ref_waveform,times,num_reps,current_gene,jtklist)
 #   fitted.values: fitted values for gene
 calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,jtklist=list()){
   
-  if(is_smooth){ # smooth the data, if requested
-    if (tied){ # if paired replicates
-      genes[current_gene,] <- smoothing_tied(current_gene, is_weighted, num_reps)
-    }
-    else{ # if unpaired replicates
-      genes[current_gene,] <- smoothing_untied(current_gene, is_weighted, num_reps)
-    }
-  }
+  # if(is_smooth){ # smooth the data, if requested
+  #   if (tied){ # if paired replicates
+  #     genes[current_gene,] <- smoothing_tied(current_gene, is_weighted, num_reps)
+  #   }
+  #   else{ # if unpaired replicates
+  #     genes[current_gene,] <- smoothing_untied(current_gene, is_weighted, num_reps)
+  #   }
+  # }
   
   gene_n <- as.character(genes[current_gene,1]) # gene name
   # first we need to check whether or not the gene is just a straight line
@@ -484,7 +484,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     y_val <- rbind(as.numeric(as.character(t(genes[current_gene,c(2:ncol(genes))])))) # all the gene values
   }
   else{
-    y_val <- (avg_rep(current_gene,num_reps)) # starting values determined by average of replicates
+    y_val <- avg_genes[current_gene,] # starting values determined by average of replicates
   }
   
   tryCatch({ # throw exception upon error
@@ -767,6 +767,173 @@ adjust_p_values <- function(pvals){
 
 # function to calculate a rolling average (3-wide window) for a set of data (smoothing) for paired
 # (tied) replicates
+# inputs:
+#  is_weighted: logical if there is smoothing, is it weighted (1,2,1) smoothing, 
+#    or unweighted smoothing (1,1,1)
+#  num_reps: number of replicates  
+# outputs:
+#  smoothed data
+smoothing_all_tied <- function(is_weighted, num_reps){
+  # originally based on heat map code, but it will work fine here
+  
+  #get matrix of just the relative expression over time
+  all_reps <- as.matrix(genes[,2:ncol(genes)])
+  
+  if (!is_weighted){
+    
+    #if there are replicates, average the relative expression for each replicate
+    center_reps <- list() # to store actual replicate matrix
+    mtx_count <- list() # to store how many are NA
+    for (i in 1:num_reps){
+      center_reps[[i]] <- all_reps[, seq(i,ncol(all_reps), by=num_reps)]
+      mtx_count[[i]] <- is.na(center_reps[[i]])
+      center_reps[[i]][is.na(center_reps[[i]])] <- 0
+    }
+    
+    repmtx_l <- list() # store amount to divide by for each rep
+    repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(all_reps))+3 # to store how many we should divide by
+    repmtx[,c(1,ncol(repmtx))] <- repmtx[,c(1,ncol(repmtx))] - 1 # we only divide by 2 at edges
+  } else{ # weighted averaging
+    
+    #if there are replicates, average the relative expression for each replicate
+    center_reps <- list() # to store actual replicate matrix
+    mtx_count <- list() # to store how many are NA
+    for (i in 1:num_reps){
+      center_reps[[i]] <- all_reps[, seq(i,ncol(all_reps), by=num_reps)]*2 
+      mtx_count[[i]] <- is.na(center_reps[[i]])*2
+      center_reps[[i]][is.na(center_reps[[i]])] <- 0
+    }
+    
+    repmtx_l <- list() # store amount to divide by for each rep
+    repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(all_reps))+4 # to store how many we should divide by
+    repmtx[,c(1,ncol(repmtx))] <- repmtx[,c(1,ncol(repmtx))] - 1 # we only divide by 3 at edges
+    
+  }
+  for (i in 1:num_reps){
+    # sum the replicates
+    left <- cbind(matrix(0,nrow(all_reps),1),center_reps[[i]][,-ncol(center_reps[[i]])]/2) # left shifted matrix
+    right <- cbind(center_reps[[i]][,-1]/2,matrix(0,nrow(genes),1)) # right shifted matrix
+    center_reps[[i]] <- left + center_reps[[i]] + right
+    
+    # figure out how many replicates are actually available for each time point
+    left_na <- cbind(matrix(0,nrow(all_reps),1),mtx_count[[i]][,-ncol(mtx_count[[i]])]) # left shifted matrix
+    right_na <- cbind(mtx_count[[i]][,-1],matrix(0,nrow(genes),1)) # right shifted matrix
+    repmtx_l[[i]] <- repmtx - left_na - mtx_count[[i]] - right_na
+    # to avoid division by 0 and induce NAs if there are no time points available
+    repmtx_l[[i]][repmtx_l[[i]]==0] <- NA 
+  }
+  
+  dat <- genes
+  for (x in 0:(num_reps-1)){
+    dat[,seq(2+x,ncol(genes),by=num_reps)] <- center_reps[[x+1]]/repmtx_l[[x+1]]
+  }
+  dat[is.na(genes)] <- NA # do not impute missing values
+  return(dat)
+}
+
+# function to calculate a rolling average (3-wide window) for a set of data (smoothing) for paired
+# (tied) replicates
+# inputs:
+#  is_weighted: logical if there is smoothing, is it weighted (1,2,1) smoothing, 
+#    or unweighted smoothing (1,1,1)
+#  num_reps: number of replicates  
+# outputs:
+#  smoothed data
+smoothing_all_untied <- function(is_weighted, num_reps){
+  #get matrix of just the relative expression over time
+  all_reps <- as.matrix(genes[,2:ncol(genes)])
+  
+  if (!is_weighted){
+    
+    #if there are replicates, average the relative expression for each replicate
+    center_reps <- list() # to store actual replicate matrix
+    mtx_count <- list() # to store how many are 
+    
+    side_reps <- avg_genes 
+    mtx_side_count <- is.na(side_reps)
+    side_reps[is.na(side_reps)] <- 0
+    for (i in 1:num_reps){
+      center_reps[[i]] <- all_reps[, seq(i,ncol(all_reps), by=num_reps)] 
+      mtx_count[[i]] <- is.na(center_reps[[i]])
+      center_reps[[i]][is.na(center_reps[[i]])] <- 0
+    }
+    
+    repmtx_l <- list() # store amount to divide by for each rep
+    repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(all_reps))+3 # to store how many we should divide by
+    repmtx[,c(1,ncol(repmtx))] <- repmtx[,c(1,ncol(repmtx))] - 1 # we only divide by 3 at edges
+  } else{ # weighted averaging
+    
+    #if there are replicates, average the relative expression for each replicate
+    center_reps <- list() # to store actual replicate matrix
+    mtx_count <- list() # to store how many are 
+    
+    side_reps <- avg_genes 
+    mtx_side_count <- is.na(side_reps)
+    side_reps[is.na(side_reps)] <- 0
+    
+    for (i in 1:num_reps){
+      center_reps[[i]] <- all_reps[, seq(i,ncol(all_reps), by=num_reps)]*2 
+      mtx_count[[i]] <- is.na(center_reps[[i]])*2
+      center_reps[[i]][is.na(center_reps[[i]])] <- 0
+    }
+    
+    repmtx_l <- list() # store amount to divide by for each rep
+    repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(all_reps))+4 # to store how many we should divide by
+    repmtx[,c(1,ncol(repmtx))] <- repmtx[,c(1,ncol(repmtx))] - 1 # we only divide by 3 at edges
+    
+  }
+  for (i in 1:num_reps){
+    # sum the replicates
+    left <- cbind(matrix(0,nrow(genes),1),side_reps[,-ncol(side_reps)]) # left shifted matrix
+    right <- cbind(side_reps[,-1],matrix(0,nrow(genes),1)) # right shifted matrix
+    center_reps[[i]] <- left + center_reps[[i]] + right
+    
+    # figure out how many replicates are actually available for each time point
+    left_na <- cbind(matrix(0,nrow(all_reps),1),mtx_side_count[,-ncol(mtx_side_count)]) # left shifted matrix
+    right_na <- cbind(mtx_side_count[,-1],matrix(0,nrow(genes),1)) # right shifted matrix
+    repmtx_l[[i]] <- repmtx - left_na - mtx_count[[i]] - right_na
+    # to avoid division by 0 and induce NAs if there are no time points available
+    repmtx_l[[i]][repmtx_l[[i]]==0] <- NA 
+  }
+  
+  dat <- genes # assigning to dataframe to return
+  for (x in 0:(num_reps-1)){
+    dat[,seq(2+x,ncol(genes),by=num_reps)] <- center_reps[[x+1]]/repmtx_l[[x+1]]
+  }
+  dat[is.na(genes)] <- NA # do not impute missing values
+  return(dat)
+}
+
+# function to normalize expressions in a matricized manner, by row
+# thanks to: https://stackoverflow.com/questions/25099825/row-wise-variance-of-a-matrix-in-r
+# outputs:
+#   normalized expression data
+normalize_all <- function(){
+  
+  #get matrix of just the relative expression over time
+  all_reps <- as.matrix(genes[,2:ncol(genes)])
+  
+  # vector of row means
+  all_row_mean <- rowMeans(all_reps, na.rm = TRUE)
+  # vector of standard deviations
+  all_row_stdev <- sqrt(rowSums((all_reps - rowMeans(all_reps,na.rm = TRUE))^2, na.rm = TRUE)/(dim(all_reps)[2] - 1))
+  
+  # get the matrix of normalized expressions
+  all_reps_normal <- (all_reps - all_row_mean)/all_row_stdev
+  # if standard deviation is 0, imposes NA, so this expression shouldn't be considered anyway
+  # and is now constant
+  all_reps_normal[is.na(all_reps_normal)] <- 0 
+  
+  # create dataframe with normalized expressions
+  dat <- genes
+  dat[,-1] <- all_reps_normal
+  
+  return(list("dat"=dat, "means"=all_row_mean, "stdevs"=all_row_stdev))
+}
+
+# DEPRECIATED
+# function to calculate a rolling average (3-wide window) for a set of data (smoothing) for paired
+# (tied) replicates
 # smooths each replicate separately
 # inputs:
 #  current_gene: row number of current gene we want to calculate parameters for
@@ -800,6 +967,9 @@ smoothing_tied <- function(current_gene, is_weighted, num_reps){
   return(dat)
 }
 
+
+
+# DEPRECIATED
 # function to calculate a rolling average (3-wide window) for a set of data (smoothing) for unpaired
 # (untied) replicates
 # smooths each replicate with the following scheme: left average, data of specific replicate, right average
