@@ -700,7 +700,7 @@ server <- function(input,output){ # aka the code behind the results
         circ_jtk <- (JTK_results$BH.Q<as.numeric(input$pval_cutoff) & JTK_results$PER >=low_end & JTK_results$PER < high_end) #jtk's circadian genes
       }
       else{
-        circ_jtk <- (JTK_results$BY.Q<as.numeric(input$pval_cutoff) & JTK_results$PER >=high_end & JTK_results$PER < low_end) #jtk's circadian genes
+        circ_jtk <- (JTK_results$BY.Q<as.numeric(input$pval_cutoff) & JTK_results$PER >=low_end & JTK_results$PER < high_end) #jtk's circadian genes
       }
       # confusion matrix of circadian genes
       #           jtk
