@@ -555,6 +555,9 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     
     # calculate starting amplitude, y_shift
     y0 <- mean(y_val,na.rm = TRUE) # intial value for the equilibrium shift
+    if (y0 < 10^-10 && y0 > -10^-10){
+      y0 <- 10^-8 # avoiding 0 mean, which makes gradient singular
+    }
     x0 <- min(times) # the x start parameter
     a0 <- max(y_val,na.rm = TRUE) - y0 # mean(y_val) # initial guess for amplitude
     

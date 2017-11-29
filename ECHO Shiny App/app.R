@@ -49,6 +49,10 @@ ggname <- function(x) {
 # UI ----
 
 ui <- fluidPage(
+  tags$head( # solid black line for aesthetics
+    tags$style(HTML("hr {border-top: 1px solid #b8babc;}"))
+  ),
+  
   headerPanel("ECHO: Finding and Visualizing Circadian Rhythms"), # title  
   
   tabsetPanel( 
@@ -124,8 +128,15 @@ ui <- fluidPage(
                      actionButton("remove_help", icon("question", lib="font-awesome"))),tags$br(),
                  uiOutput("Help_remove"),
                  
+                 div(style="display: inline-block;",
+                     checkboxInput("is_normal", "Normalize data?", value = FALSE, width = NULL)),
+                 div(style="display: inline-block; vertical-align:top;  width: 20px;",
+                     actionButton("normal_help", icon("question", lib="font-awesome"))),tags$br(),
+                 uiOutput("Help_normal"),
+                 
                  # action buttons for running echo code and downloading results
-                 actionButton("find_rhythms", "Find Rhythms!"),tags$br(),tags$br(),
+                 actionButton("find_rhythms", "Find Rhythms!"),tags$br(),
+                 hr(),
                  downloadButton("downloadECHO", "Download ECHO CSV"),
                  downloadButton("downloadJTK", "Download JTK CSV"),
                  downloadButton("downloadRData", "Download RData")
@@ -149,7 +160,7 @@ ui <- fluidPage(
                                      just check 'Run Example'. This will run the example .csv that came with your download of
                                      ECHO. This example data is fabricated expression data from 2 to 48 hours with 2 hour
                                      resolution and 3 replicates. Random missing data is also included."),
-                              tags$p("When you run your data, a progress bar will display in the bottom left corner. For ECHO, another progress bar will display in the console window. Upon finishing, the results will display above. You can then download the ECHO results (.csv), 
+                              tags$p("When you run your data, a progress bar will display in the bottom left corner showing the stage of progress (ECHO, JTK_CYCLE (if run), finish). For ECHO, another progress bar will display in the console window to show directly how far one is in the ECHO progress. Upon finishing, the results will display above. You can then download the ECHO results (.csv), 
                                      the results for use in the visualization tab (.RData), and the JTK_CYCLE results 
                                      (.csv) (if run)."),
                               tags$p(HTML("If you are using the results from this app or want to learn about its methods, please <a href='https://dl.acm.org/citation.cfm?id=3107420&CFID=826084181&CFTOKEN=52238765'>cite us</a>. Additionally, if you are using JTK_CYCLE results, please <a href='https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3119870/'>cite them</a>.")),
@@ -160,7 +171,10 @@ ui <- fluidPage(
                               "- your dataset/file(s)",tags$br(),
                               "- your exact settings for the run (a screenshot will do)",tags$br(),
                               "- your exact error from the console window (a screenshot will do)",tags$br(),tags$br(),
-                              tags$p("ECHO Version 0.4")
+                              "All images created by ECHO using data from:",tags$br(),
+                              "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
+                              tags$br(),tags$br(),
+                              tags$p("ECHO Version 1.0")
                               ))
                               )),
                  tabPanel("About Visualizing Results",
@@ -359,6 +373,14 @@ server <- function(input,output){ # aka the code behind the results
         return()
       }
     })
+    output$Help_normal=renderUI({
+      if(input$normal_help%%2){ # forcing coefficient help
+        helpText("Normalizes data by row using the normal distribution (subtract each row by row mean and divide by row standard deviation). Normalized data is returned in results, rather than original data. Recommended for un-normalized data. If you have normalized your data in any way, this option is strongly not recommended.")
+      }
+      else{
+        return()
+      }
+    })
     
     
     # run echo with maybe jtk ----
@@ -405,12 +427,24 @@ server <- function(input,output){ # aka the code behind the results
           }
           
         }
+        # if genes only has one row, add another constant row to alleviate automatic vectorization
+        if (nrow(genes)==1){
+          # creating a constant row and adding it to genes
+          add_row <- data.frame(matrix(0L, 1, ncol(genes)))
+          add_row[1,1] <- "not considering"
+          colnames(add_row) <- colnames(genes)
+          genes <- rbind(genes,add_row)
+          add_one <- TRUE # marker for appropriate displays for progress bar
+        }
+        else{
+          add_one <- FALSE # marker for appropriate displays for progress bar
+        }
+        
         # normalize and store original data
-        # original_genes <- genes
-        # norm_list <- normalize_all()
-        # genes <- norm_list$dat
-        # stdevs <- norm_list$stdevs
-        # means <- norm_list$means
+        if (input$is_normal){
+          norm_list <- normalize_all()
+          genes <- norm_list$dat
+        }
         
         # getting average data, for more than one replicate
         avg_genes <- avg_all_rep(num_reps)
@@ -473,7 +507,11 @@ server <- function(input,output){ # aka the code behind the results
         registerDoSNOW(cl)
         
         # making a progress bar
-        print(paste("Percentage finished out of",nrow(genes),"expressions:"))
+        if (add_one){
+          print(paste("Percentage finished out of",nrow(genes)-1,"expression:"))
+        } else {
+          print(paste("Percentage finished out of",nrow(genes),"expressions:"))
+        }
         pb <- txtProgressBar(max = nrow(genes), style = 3)
         progress <- function(n) setTxtProgressBar(pb, n)
         opts <- list(progress = progress)
@@ -489,11 +527,17 @@ server <- function(input,output){ # aka the code behind the results
         # renaming columns of the final results
         colnames(total_results) <- c("Gene Name","Convergence","Iterations","Gamma","Oscillation Type","Amplitude","Omega","Period","Phase Shift","Hours Shifted","Equilibrium Value", "Tau", "P-Value", paste(rep("Original CT",length(rep(timen, each = num_reps))),rep(timen, each = num_reps),rep(".",length(rep(timen, each = num_reps))),rep(c(1:num_reps), length(timen)),sep=""), paste(rep("Fitted CT",length(timen)),timen,sep=""))
         
+        # remove the fake row I added if there is only one gene
+        if (add_one){
+          total_results <- total_results[-nrow(total_results),]
+        }
+        
         adjusted_p_val_us <- adjust_p_values(total_results$`P-Value`) # benjamini-hochberg adjust p-values
         total_results <- cbind(total_results[,c(1:13)],`BH Adj P-Value` = adjusted_p_val_us, total_results[,c(14:ncol(total_results))]) # assign to data frame
         
         # adding the benjamini-hochberg-yekutieli p-value adjustment
         total_results <- cbind(total_results[,c(1:14)],`BY Adj P-Value` = p.adjust(unlist(total_results$`P-Value`), method = "BY"), total_results[,c(15:ncol(total_results))])
+        
         
         # time measured - output
         end.time <- Sys.time()
