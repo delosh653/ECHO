@@ -113,8 +113,7 @@ calc_p_value <- function(n, tau, two_tail){
   # calculate the pvalue from the CDF
   if (two_tail){
     pval = cdfs[[n]][min_inv_score+1]*2.0
-  }
-  else{ # one tailed: probability of getting that amount or fewer inversions
+  } else{ # one tailed: probability of getting that amount or fewer inversions
     pval = cdfs[[n]][min_inv_score+1]
   }
   
@@ -451,8 +450,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
       results <- cbind(results, rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(rep(NA,length(times))))
       return (results)
     }
-  }
-  else{ # multiple replicates
+  } else{ # multiple replicates
     if (!is_deviating_rep(current_gene,num_reps)){
       results <- data.frame(gene = gene_n, conv = "No Deviation", iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA,  tau = NA, pval = NA)
       results <- cbind(results, rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(rep(NA,length(times))))
@@ -469,8 +467,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
         results <- cbind(results, rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(rep(NA,length(times))))
         return (results)
         
-      }
-      else{ # multiple replicates
+      } else{ # multiple replicates
         
         results <- data.frame(gene = gene_n, conv = "Unexpressed", iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA,  tau = NA, pval = NA)
         results <- cbind(results, rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(rep(NA,length(times))))
@@ -482,8 +479,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
   # calculating averages for initial values
   if (num_reps == 1){
     y_val <- rbind(as.numeric(as.character(t(genes[current_gene,c(2:ncol(genes))])))) # all the gene values
-  }
-  else{
+  } else{
     y_val <- avg_genes[current_gene,] # starting values determined by average of replicates
   }
   
@@ -506,8 +502,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
           counting <- counting+1
         }
       }
-    }
-    else if (resol <=2){
+    } else if (resol <=2){
       # go through gene values and find maximum as compared to six surrounding values
       for(i in 4:(length(y_val)-3)){ 
         # deal with complete missingness
@@ -521,8 +516,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
           counting <- counting+1
         }
       }
-    }
-    else if (resol <= 4){
+    } else if (resol <= 4){
       # to deal with complete missingness
       if(suppressWarnings(max(y_val[i-2],y_val[i-1],y_val[i],y_val[i+1],y_val[i+2],na.rm = TRUE))== -Inf){
         next
@@ -536,8 +530,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
           counting <- counting+1
         }
       }
-    }
-    else{
+    } else{
       # to deal with complete missingness
       if(suppressWarnings(max(y_val[i-2],y_val[i-1],y_val[i],y_val[i+1],y_val[i+2],na.rm = TRUE))== -Inf){
         next
@@ -564,26 +557,22 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     # intial value for gamma
     if (which.max(peaks)==0){ # if there are no peaks, we account for that
       gam0 <- 0
-    }
-    else if (which.max(peaks)==1){ # if the highest peak is first, then damping is likely
+    } else if (which.max(peaks)==1){ # if the highest peak is first, then damping is likely
       if (length(peaks)>1){
         # trying to figure out gamma based on logarithmic decrement
         n <- peaks_time[2]-peaks_time[1]
         log_dec <- (1/n)*log(abs(peaks[1]/peaks[2]))
         gam0 <- 1/(sqrt(1+((2*pi/log_dec)^2)))
-      }
-      else{ # use a guess 
+      } else{ # use a guess 
         gam0 <- .01
       }
-    }
-    else{ # otherwise driving is likely
+    } else{ # otherwise driving is likely
       if (length(peaks)>1){
         # trying to figure out gamma based on logarithmic decrement
         n <- peaks_time[2]-peaks_time[1]
         log_dec <- (1/n)*log(abs(peaks[2]/peaks[1]))
         gam0 <- -1*1/(sqrt(1+((2*pi/log_dec)^2)))
-      }
-      else{ # use a guess
+      } else{ # use a guess
         gam0 <- -.01
       }
     }
@@ -592,15 +581,12 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     if (length(peaks) == 0){
       if (high == -Inf || low == Inf){
         w0 <- 2*pi/(length(times)*resol/2)
-      }
-      else{
+      } else{
         w0 <- 2*pi/(length(times)*resol/((high+low)/2))
       }
-    }
-    else if (length(peaks) == 1){ # phase shift cases only one peak to appear
+    } else if (length(peaks) == 1){ # phase shift cases only one peak to appear
       w0 <- 2*pi/(length(times)*resol/(length(peaks)+1))
-    }
-    else{
+    } else{
       w0 <- 2*pi/(length(times)*resol/(length(peaks)))
     }
     
@@ -633,8 +619,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
                                                upper=c(Inf, Inf, low, Inf, max(temp$y)), 
                                                control = nls.lm.control(maxiter = 1000, maxfev = 2000, 
                                                                         ftol=1e-6, ptol=1e-6, gtol=1e-6)))
-    }
-    else{ # multiple replicates
+    } else{ # multiple replicates
       #put the times and data point into a data frame
       weights <- calc_weights(current_gene,num_reps)
       temp <- data.frame(y=cbind(unlist(genes[current_gene,-1])),t=cbind(rep(times,each = num_reps)),w=cbind(rep(weights,each = num_reps)))
@@ -667,17 +652,13 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     # calculating whether (over)damped, (over)driven, harmonic
     if (gam <= -.1){
       type_gam <- "Overdriven"
-    }
-    else if (gam <= -.01){
+    } else if (gam <= -.01){
       type_gam <- "Driven"
-    }
-    else if (gam <= .01){
+    } else if (gam <= .01){
       type_gam <- "Harmonic"
-    }
-    else if (gam <= .1){
+    } else if (gam <= .1){
       type_gam <- "Damped"
-    }
-    else{
+    } else{
       type_gam <- "Overdamped"
     }
     
@@ -703,8 +684,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     if (num_reps == 1){
       results <- data.frame(gene = gene_n, conv = did_conv, iter = num_iter, gamma = gam, type_gam = type_gam,amplitude = a, omega = omega, period = (2*pi/omega), phase.shift = phi,hours.shifted = phase_hours, y_shift=y_shift, tau = tau, pval = pval)
       results <- cbind(results, y_val, rbind(ref_wave))
-    }
-    else{
+    } else{
       results <- data.frame(gene = gene_n, conv = did_conv, iter = num_iter, gamma = gam, type_gam = type_gam,amplitude = a, omega = omega, period = (2*pi/omega), phase.shift = phi,hours.shifted = phase_hours, y_shift=y_shift, tau = tau, pval = pval)
       results <- cbind(results, rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(ref_wave))
     }
@@ -715,8 +695,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     if (num_reps == 1){
       results <- data.frame(gene = gene_n, conv = NA, iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA, tau = NA, pval = NA)
       results <- cbind(results, y_val, rbind(rep(NA,length(times))))
-    }
-    else{
+    } else{
       results <- data.frame(gene = gene_n, conv = NA, iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA, tau = NA, pval = NA)
       results <- cbind(results, rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(rep(NA,length(times))))
     }
