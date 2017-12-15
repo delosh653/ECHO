@@ -113,9 +113,7 @@ ui <- fluidPage(
                  uiOutput("Help_limit"),
                  
                  div(style="display: inline-block;",
-                     radioButtons("smooth", "Smooth data?", choices = NULL, selected = NULL,
-                                  inline = TRUE, width = NULL, choiceNames = c("No","Yes; weighted","Yes; unweighted"), choiceValues = c("nosmooth","TRUE","FALSE"))),
-                 
+                     checkboxInput("smooth", "Smooth data?", value = FALSE, width = NULL)),
                  div(style="display: inline-block; vertical-align:top;  width: 20px;",
                      actionButton("smooth_help", icon("question", lib="font-awesome"))),
                  uiOutput("Help_smooth"),
@@ -174,51 +172,10 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.0")
+                              tags$p("ECHO Version 1.1")
                               ))
                               )),
-                 tabPanel("About Visualizing Results",
-                          tags$div(class="header", checked = NA,
-                                   list(
-                                     tags$p("Once you have run your data, you can visualize and explore your results using the .RData
-                                            file available for download after your run. There are five types of visualizations/
-                                            explorations currently available:"),
-                                     HTML('<center>'),tags$b("Gene Lists:"),HTML('</center>'),
-                                     tags$p("A subset of ECHO parameter results for exploration, which can be sorted by any parameter.These subsets are specified by the P-Value Type, P-Value Cutoff, and
-                                            Subset of Data to View."),
-                                     
-                                     HTML('<center><img src="venn_diagram_by_adj_include_overdamped_Neurospora_Replicates_Unsmoothed.PNG" style="width:200px"></center><br>'),
-                                     HTML('<center>'),tags$b("Venn Diagram:"),HTML('</center>'),
-                                     tags$p("A Venn Diagram of ECHO results compared to JTK_CYCLE results (if available). A text 
-                                            summary also appears below the Venn Diagram. If JTK_CYCLE results are not available,
-                                            a text summary of ECHO results appear below a blank plot."),
-                                     
-                                     HTML('<center><img src="heat_map_Neurospora_Replicates_Unsmoothed.PNG" style="width:200px"></center><br>'),
-                                     HTML('<center>'),tags$b("Heat Map:"),HTML('</center>'),
-                                     tags$p("A heat map of the expression data for results (not including constant, unexpressed, or overly noisy data). Each expression appears on the y axis and time on the x axis. Expressions are sorted from top to bottom by phase and normalized to be in the range [-1,1]."),
-                                     
-                                     HTML('<center><img src="wc1_gene_expression_wo_rep_Neurospora_Replicates_Unsmoothed.PNG" style="width:300px"></center><br>'),
-                                     HTML('<center>'),tags$b("Gene Expressions:"),HTML('</center>'),
-                                     tags$p("A plot of original data and fitted data. A summary of the parameters for that gene appears
-                                            below the plot. If one replicate, the original data is plotted as
-                                            a blank line and the fitted data is plotted as a green line. If multiple replicates,
-                                            the original data is plotted with shading between the max and min at each data point and
-                                            the fitted data is plotted as a black line."),
-                                     
-                                     HTML('<center><img src="wc1_Neurospora_Replicates_Unsmoothed.PNG" style="width:300px"></center><br>'),
-                                     HTML('<center>'),tags$b("Gene Expressions with Replicates:"),HTML('</center>'),
-                                     tags$p("If multiple replicates, the original data is plotted with shading between the max and min
-                                            at each data point, as well as the original data for each replicate (up to 8 replicates).
-                                            The fitted data is plotted as a black line. A summary of the parameters for that gene 
-                                            appears below the plot."),
-                                     
-                                     HTML('<center><img src="gamma_density_Neurospora_Replicates_Unsmoothed.PNG" style="width:300px"></center><br>'),
-                                     HTML('<center>'),tags$b("Parameter Density Graph (PDG):"),HTML('</center>'),
-                                     tags$p("A density plot (a smoothed histogram, or frequency graph) for specific parameters for a
-                                            subset of the data. These subsets are specified by the P-Value Type, P-Value Cutoff, and
-                                            Subset of Data to View."))
-                                     )
-                                     ),
+                 
                  tabPanel("System Requirements",
                           tags$div(class="header",checked=NA,
                                    list(
@@ -268,9 +225,9 @@ ui <- fluidPage(
         
         textInput("gene_name","Enter Gene to View (for Gene Expression with/without Replicates)"),
         
-        selectInput("pval_cat","Enter P-Value Adjustment to View (for PDG and Gene Lists)",c("BH Adj P-Value", "BY Adj P-Value", "P-Value")),
+        selectInput("pval_cat","Enter P-Value Adjustment to View (for PDG, Heat Maps, Gene Lists)",c("BH Adj P-Value", "BY Adj P-Value", "P-Value")),
         
-        textInput("pval_cutoff","Enter P-Value Significance Cutoff (for PDG and Gene Lists)", value = ".05"),
+        textInput("pval_cutoff","Enter P-Value Significance Cutoff (for PDG, Heat Maps, Gene Lists)", value = ".05"),
         
         selectInput("coeff","Choose Coefficient to View (for PDG)",c("Gamma","Amplitude","Omega","Period","Phase Shift","Hours Shifted", "Equilibrium Value", "Tau", "P-Value", "BH Adj P-Value", "BY Adj P-Value")),
         
@@ -281,7 +238,12 @@ ui <- fluidPage(
             actionButton("subset_help", icon("question", lib="font-awesome"))),
         uiOutput("Help_subset"),
         
+        div(style="display: inline-block;",
+            selectInput("heat_subset_look","Subset of Data to View (for Heat Maps)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Overdamped","Overdriven","Both","Theirs","Ours","Diff"))),
         
+        div(style="display: inline-block; vertical-align:top;  width: 20px;",
+            actionButton("heat_subset_help", icon("question", lib="font-awesome"))),
+        uiOutput("Help_heat_subset"),
         
         # action buttons for visualization and downloading results
         actionButton("go","Visualize!"),
@@ -293,7 +255,49 @@ ui <- fluidPage(
         tabsetPanel(
           tabPanel("Visualization",fluidRow(plotOutput("plot_viz", height = "650px"),
                                             verbatimTextOutput("text"))),
-          tabPanel("Gene List", dataTableOutput("table"))
+          tabPanel("Gene List", dataTableOutput("table")),
+          tabPanel("About Visualizing Results",
+                   tags$div(class="header", checked = NA,
+                            list(
+                              tags$p("Once you have run your data, you can visualize and explore your results using the .RData
+                                     file available for download after your run. (Note that .PNG download is not available for Venn Diagrams and Heat Maps, but screenshotting tools will work well.) There are five types of visualizations/
+                                     explorations currently available:"),
+                              HTML('<center>'),tags$b("Gene Lists:"),HTML('</center>'),
+                              tags$p("A subset of ECHO parameter results for exploration, which can be sorted by any parameter.These subsets are specified by the P-Value Type, P-Value Cutoff, and
+                                     Subset of Data to View."),
+                              
+                              HTML('<center><img src="venn_diagram_by_adj_include_overdamped_Neurospora_Replicates_Unsmoothed.PNG" style="width:200px"></center><br>'),
+                              HTML('<center>'),tags$b("Venn Diagram:"),HTML('</center>'),
+                              tags$p("A Venn Diagram of ECHO results compared to JTK_CYCLE results (if available). A text 
+                                     summary also appears below the Venn Diagram. If JTK_CYCLE results are not available,
+                                     a text summary of ECHO results appear below a blank plot."),
+                              
+                              HTML('<center><img src="heat_map_Neurospora_Replicates_Unsmoothed.PNG" style="width:200px"></center><br>'),
+                              HTML('<center>'),tags$b("Heat Map:"),HTML('</center>'),
+                              tags$p("A heat map of the expression data for indicated subset of results (not including constant, unexpressed, or overly noisy data). Each expression appears on the y axis and time on the x axis. Expressions are sorted from top to bottom by phase and normalized to be in the range [-1,1]."),
+                              
+                              HTML('<center><img src="wc1_gene_expression_wo_rep_Neurospora_Replicates_Unsmoothed.PNG" style="width:300px"></center><br>'),
+                              HTML('<center>'),tags$b("Gene Expressions:"),HTML('</center>'),
+                              tags$p("A plot of original data and fitted data. A summary of the parameters for that gene appears
+                                     below the plot. If one replicate, the original data is plotted as
+                                     a blank line and the fitted data is plotted as a green line. If multiple replicates,
+                                     the original data is plotted with shading between the max and min at each data point and
+                                     the fitted data is plotted as a black line."),
+                              
+                              HTML('<center><img src="wc1_Neurospora_Replicates_Unsmoothed.PNG" style="width:300px"></center><br>'),
+                              HTML('<center>'),tags$b("Gene Expressions with Replicates:"),HTML('</center>'),
+                              tags$p("If multiple replicates, the original data is plotted with shading between the max and min
+                                     at each data point, as well as the original data for each replicate (up to 8 replicates).
+                                     The fitted data is plotted as a black line. A summary of the parameters for that gene 
+                                     appears below the plot."),
+                              
+                              HTML('<center><img src="gamma_density_Neurospora_Replicates_Unsmoothed.PNG" style="width:300px"></center><br>'),
+                              HTML('<center>'),tags$b("Parameter Density Graph (PDG):"),HTML('</center>'),
+                              tags$p("A density plot (a smoothed histogram, or frequency graph) for specific parameters for a
+                                     subset of the data. These subsets are specified by the P-Value Type, P-Value Cutoff, and
+                                     Subset of Data to View."))
+                              )
+                              )
         )
       )
     )
@@ -327,7 +331,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_smooth=renderUI({ # data smoothing help
       if(input$smooth_help%%2){
-        helpText("Indicates whether data should be smoothed, which also depends on type of data. If yes and weighted, the data is smoothed over a rolling window of 3 points, with each of the points having 1,2,1 respectively. If yes and unweighted, the data is smoothed over a rolling window of 3 points, weighted evenly. If biological data, each replicate is smoothed independently. If technical data, each time point is smoothed by itself, centered, and the average expression per time point on either side. Note: this will increase running time.")
+        helpText("Indicates whether data should be smoothed, which also depends on type of data. If checked, the data is weighted smoothed over a rolling window of 3 points, with each of the points having weights of 1,2,1 respectively. If biological data, each replicate is smoothed independently. If technical data, each time point is smoothed by itself, centered, and the average expression per time point on either side. Note: this will increase running time.")
       }
       else{
         return()
@@ -367,7 +371,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_subset=renderUI({
       if(input$subset_help%%2){ # forcing coefficient help
-        helpText("Identifies which subset of data to view for specified visualizations. For more information regarding what terms such as 'Both' and 'Theirs' mean, please view Venn Diagram summary. Note: Some subsets are not available if JTK_CYCLE results are not available. ")
+        helpText("Identifies which subset of data to view for specified visualizations. For more information regarding what terms such as 'Both' and 'Theirs' mean, please view Venn Diagram summary. Note 1: Forcing coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
       }
       else{
         return()
@@ -376,6 +380,14 @@ server <- function(input,output){ # aka the code behind the results
     output$Help_normal=renderUI({
       if(input$normal_help%%2){ # forcing coefficient help
         helpText("Normalizes data by row using the normal distribution (subtract each row by row mean and divide by row standard deviation). Normalized data is returned in results, rather than original data. Recommended for un-normalized data. If you have normalized your data in any way, this option is strongly not recommended.")
+      }
+      else{
+        return()
+      }
+    })
+    output$Help_heat_subset=renderUI({
+      if(input$heat_subset_help%%2){ # forcing coefficient help
+        helpText("Identifies which subset of data to view for heat map visualizations. For more information regarding what terms such as 'Both' and 'Theirs' mean, please view Venn Diagram summary. Note 1: Forcing coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
       }
       else{
         return()
@@ -453,13 +465,13 @@ server <- function(input,output){ # aka the code behind the results
         rem_unexpr <- input$rem_unexpr # indicator for removing unexpressed genes
         
         # figuring out whether smoothing is wanted
-        if (input$smooth=="nosmooth"){ # no smoothing
+        if (!input$smooth){ # no smoothing
           is_smooth <- FALSE
           is_weighted <- FALSE
         }
         else{ # yes smoothing, weighted or unweighted
           is_smooth <- TRUE
-          is_weighted <- as.logical(input$smooth)
+          is_weighted <- TRUE # only offer weighted smoothing
           
           # create smoothed matrix, reassign genes
           if(is_smooth){ # smooth the data, if requested
@@ -475,20 +487,18 @@ server <- function(input,output){ # aka the code behind the results
         
         # figuring out whether a range is wanted, adjusting accordingly
         if (input$low ==""){ # empty low input, adjust to time series
-          if (begin > 0){
-            low <- 2*pi/begin
+          if (resol >= 1){
+            low <- 2*pi/resol
           }
           else{ # if the begining is >=0, smallest period available is 1
             low <- 2*pi/1
           }
-        }
-        else{ # there is a low input
+        } else{ # there is a low input
           low <- 2*pi/as.numeric(input$low)
         }
         if (input$high ==""){ # empty high input, adjust to time series
-          high <- 2*pi/end
-        }
-        else{ # there is a high input
+          high <- 2*pi/(resol*length(timen))
+        } else{ # there is a high input
           high <- 2*pi/as.numeric(input$high)
         }
         
@@ -550,10 +560,12 @@ server <- function(input,output){ # aka the code behind the results
         low <<- low
         high <<- high
         
+        print(paste("Ended on:",Sys.time())) # show ending time in console window
+        
         # jtk run -----
         
         # if possible or desired, run JTK_CYCLE
-        if (input$run_jtk && input$high != "" && input$low != ""){
+        if ((input$run_jtk && input$high != "" && input$low != "") || (input$run_jtk && input$use_example)){
           incProgress(1/3,detail = paste("Running JTK. Started on:",Sys.time()))
           print("Beginning to run JTK...")
           print(paste("Started on:",Sys.time()))
@@ -599,6 +611,8 @@ server <- function(input,output){ # aka the code behind the results
           time.taken.jtk <- end.time - start.time
           
           JTK_results <<- JTK_results
+          
+          print(paste("Ended on:",Sys.time())) # show ending time in console window
         }
         
         # download results ----
@@ -727,11 +741,16 @@ server <- function(input,output){ # aka the code behind the results
     nodev[is.na(nodev)] <- FALSE # na's are false
     noexpr <- (total_results$Convergence=="Unexpressed") # results with no standard deviation deviation
     noexpr[is.na(noexpr)] <- FALSE # na's are false
-    driven <- total_results$`Oscillation Type` == "Driven"
-    damped <- total_results$`Oscillation Type` == "Damped"
-    harmonic <- total_results$`Oscillation Type` == "Harmonic"
-    overdriven <- total_results$`Oscillation Type` == "Overdriven"
-    overdamped <- total_results$`Oscillation Type` == "Overdamped"
+    # only showing significant, by our measures
+    driven <- total_results$`Oscillation Type` == "Driven" & circ_us
+    damped <- total_results$`Oscillation Type` == "Damped" & circ_us
+    harmonic <- total_results$`Oscillation Type` == "Harmonic" & circ_us
+    
+    # adjust significance for over damped/driven genes
+    circ_over <-  (total_results$Period<high_end & total_results$Period >=low_end & total_results[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
+    circ_over[is.na(circ_over)] <- FALSE # na's are false
+    overdriven <- total_results$`Oscillation Type` == "Overdriven" & circ_over
+    overdamped <- total_results$`Oscillation Type` == "Overdamped" & circ_over
     
     # gene list output based on specified subset
     { 
@@ -1161,25 +1180,101 @@ server <- function(input,output){ # aka the code behind the results
       
       start.time <- Sys.time() # begin counting time
       
-      total_results_na <-  total_results[!is.na(total_results$Amplitude),]; # filter out the rows where the paremeters are NA
-      phase <- total_results_na$`Phase Shift`
-      amp <- total_results_na$Amplitude
-      
-      #loop through every row in replace negative amplitudes with positive ones
-      # adjust the phase shift accordingly
-      for (i in 1:length(phase)) {
-        if(amp[i]<0){
-          amp[i] <- -1*amp[i]
-          #total_results_na[i,16:(15+length(timen)*num_reps)] <- -1*total_results_na[i,16:(15+length(timen)*num_reps)]
-          phase[i] <- phase[i]+pi
-        }
-        if(phase[i]>2*pi){
-          phase[i] <- phase[i]-2*pi
-        }
-        if(phase[i]<0){
-          phase[i] <- phase[i]+2*pi
-        }
+      if (!input$is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff")){
+        output$text <- renderPrint({
+          "N/A"
+        })
+        plot_viz<-ggplot()
+        total_results_na <- data.frame()
       }
+      else if(input$heat_subset_look == "None"){
+        total_results_na <-  total_results[!is.na(total_results$Amplitude),]; # filter out the rows where the paremeters are NA
+        
+      }
+      else if(input$heat_subset_look == "JTK_CYCLE"){
+        total_results_na <-  total_results[circ_jtk,]; # filter out the rows where the paremeters are NA
+      }
+      else if(input$heat_subset_look == "ECHO"){
+        # filter out the rows where the paremeters are NA and our characteristic
+        total_results_na <-  total_results[circ_us,]; 
+        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        
+      }
+      else if(input$heat_subset_look == "Damped"){
+        # filter out the rows where the paremeters are NA and our characteristic
+        total_results_na <-  total_results[damped,]; 
+        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        
+      }
+      else if(input$heat_subset_look == "Driven"){
+        # filter out the rows where the paremeters are NA and our characteristic
+        total_results_na <-  total_results[driven,]; 
+        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+      }
+      else if(input$heat_subset_look == "Harmonic"){
+        # filter out the rows where the paremeters are NA and our characteristic
+        total_results_na <-  total_results[harmonic,]; 
+        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+      }
+      else if(input$heat_subset_look == "Overdriven"){
+        # filter out the rows where the paremeters are NA and our characteristic
+        total_results_na <-  total_results[overdriven,]; 
+        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+      }
+      else if(input$heat_subset_look == "Overdamped"){
+        # filter out the rows where the paremeters are NA and our characteristic
+        total_results_na <-  total_results[overdamped,]; 
+        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+      }
+      else if(input$heat_subset_look == "Both"){
+        # filter out the rows where the paremeters are NA and our characteristic
+        total_results_na <-  total_results[both,]; 
+        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+      }
+      else if(input$heat_subset_look == "Theirs"){
+        total_results_na <-  total_results[theirs,]; # filter out the rows where the paremeters are NA
+      }
+      else if(input$heat_subset_look == "Ours"){
+        # filter out the rows where the paremeters are NA and our characteristic
+        total_results_na <-  total_results[ours,]; 
+        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+      }
+      else if(input$heat_subset_look == "Diff"){
+        # filter out the rows where the paremeters are NA and our characteristic
+        total_results_na <-  total_results[diff,]; 
+        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+      }
+      #total_results_na <-  total_results[!is.na(total_results$Amplitude),]; # filter out the rows where the paremeters are NA
+      if (input$heat_subset_look != "JTK_CYCLE" & input$heat_subset_look != "Theirs"){
+        phase <- total_results_na$`Phase Shift`
+        amp <- total_results_na$Amplitude
+        
+        #loop through every row in replace negative amplitudes with positive ones
+        # adjust the phase shift accordingly
+        for (i in 1:length(phase)) {
+          if(amp[i]<0){
+            amp[i] <- -1*amp[i]
+            #total_results_na[i,16:(15+length(timen)*num_reps)] <- -1*total_results_na[i,16:(15+length(timen)*num_reps)]
+            phase[i] <- phase[i]+pi
+          }
+          if(phase[i]>2*pi){
+            phase[i] <- phase[i]-2*pi
+          }
+          if(phase[i]<0){
+            phase[i] <- phase[i]+2*pi
+          }
+        }
+      } else {
+        if(input$heat_subset_look == "JTK_CYCLE"){
+          phase <- -1*JTK_results$LAG[circ_jtk]
+          amp <- JTK_results$AMP[circ_jtk]
+        } else {
+          phase <- -1*JTK_results$LAG[theirs]
+          amp <- JTK_results$AMP[theirs]
+        }
+        
+      }
+      
       
       #get matrix of just the relative expression over time
       hm_mat <- as.matrix(total_results_na[,16:(15+length(timen)*num_reps)])
@@ -1202,14 +1297,15 @@ server <- function(input,output){ # aka the code behind the results
       
       #normalize each row to be between -1 and 1
       for (i in 1:length(phase)){
-        gene_mean <-mean(as.matrix(hm_mat[i,]),na.rm=TRUE)
-        for (j in 1:length(timen)){
-          hm_mat[i,j] <- (hm_mat[i,j]-gene_mean)
-        }
-        gene_max <- max(abs(as.matrix(hm_mat[i,])),na.rm = TRUE)
-        for (j in 1:length(timen)){
-          hm_mat[i,j] <- (hm_mat[i,j]/gene_max)
-        }
+        # gene_mean <-mean(as.matrix(hm_mat[i,]),na.rm=TRUE)
+        # for (j in 1:length(timen)){
+        #   hm_mat[i,j] <- (hm_mat[i,j]-gene_mean)
+        # }
+        gene_max <- max(abs((hm_mat[i,])),na.rm = TRUE)
+        hm_mat[i,] <- hm_mat[i,]/gene_max 
+        # for (j in 1:length(timen)){
+        #   hm_mat[i,j] <- (hm_mat[i,j]/gene_max)
+        # }
       }
       
       #sort by phase shift
@@ -1224,8 +1320,10 @@ server <- function(input,output){ # aka the code behind the results
       # time taken to produce heat map
       end.time <- Sys.time()
       time.taken.heat <- end.time - start.time
-      output$text <- renderPrint({cat(paste("Render Time:",time.taken.heat,"seconds"))
-        cat("Expressions are each row and time points are each column.")}) # no text
+      output$text <- renderPrint({cat(paste("Render Time:",time.taken.heat,"seconds\n"))
+        cat("Expressions are each row and time points are each column.\n")
+        cat(paste("Number of expressions:",nrow(hm_mat)))})
+      
     }
     
     
