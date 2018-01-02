@@ -172,7 +172,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.1")
+                              tags$p("ECHO Version 1.2")
                               ))
                               )),
                  
@@ -216,7 +216,7 @@ ui <- fluidPage(
         
         checkboxInput("is_jtk", "JTK_CYCLE results available?", value = FALSE, width = NULL),
         div(style="display: inline-block;",
-            checkboxInput("no_restrict_gamma", "Include overdamped/overdriven genes?", value = FALSE, width = NULL)),
+            checkboxInput("no_restrict_gamma", "Include repressed/overexpressed genes?", value = FALSE, width = NULL)),
         div(style="display: inline-block; vertical-align:top;  width: 20px;",
             actionButton("restrict_help", icon("question", lib="font-awesome"))),
         uiOutput("Help_restrict"),
@@ -232,14 +232,14 @@ ui <- fluidPage(
         selectInput("coeff","Choose Coefficient to View (for PDG)",c("Gamma","Amplitude","Omega","Period","Phase Shift","Hours Shifted", "Equilibrium Value", "Tau", "P-Value", "BH Adj P-Value", "BY Adj P-Value")),
         
         div(style="display: inline-block;",
-            selectInput("subset_look","Subset of Data to View (for PDG and Gene Lists)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Overdamped","Overdriven","Nonconverged","Nonstarter","No Deviation","Both","Theirs","Ours","Diff"))),
+            selectInput("subset_look","Subset of Data to View (for PDG and Gene Lists)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Repressed","Overexpressed","Nonconverged","Nonstarter","No Deviation","Both","Theirs","Ours","Diff"))),
         
         div(style="display: inline-block; vertical-align:top;  width: 20px;",
             actionButton("subset_help", icon("question", lib="font-awesome"))),
         uiOutput("Help_subset"),
         
         div(style="display: inline-block;",
-            selectInput("heat_subset_look","Subset of Data to View (for Heat Maps)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Overdamped","Overdriven","Both","Theirs","Ours","Diff"))),
+            selectInput("heat_subset_look","Subset of Data to View (for Heat Maps)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Repressed","Overexpressed","Both","Theirs","Ours","Diff"))),
         
         div(style="display: inline-block; vertical-align:top;  width: 20px;",
             actionButton("heat_subset_help", icon("question", lib="font-awesome"))),
@@ -363,7 +363,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_restrict=renderUI({
       if(input$restrict_help%%2){ # forcing coefficient help
-        helpText("If checked, overdamped (strong decreases in amplitude over time) and overdriven (strong increases in amplitude over time) genes will be included in circadian calculations. Not recommended.")
+        helpText("If checked, repressed (strong decreases in amplitude over time) and overexpressed (strong increases in amplitude over time) genes will be included in circadian calculations. Not recommended.")
       }
       else{
         return()
@@ -575,8 +575,10 @@ server <- function(input,output){ # aka the code behind the results
           start.time <- Sys.time() # begin counting time
           options(stringsAsFactors=FALSE)
           # if smoothed, the smoothed data appears in the total_results dataframe
-          if (typeof(input$smooth)!="character"){
+          if(input$smooth){
             data <- total_results[,c(16:(15+(length(timen)*num_reps)))]
+            data <- cbind(genes[,1],data)
+            colnames(data)[1] <- "Gene.Name"
           } else{ # otherwise, just use the inputted data
             data <- genes 
           }
@@ -698,7 +700,7 @@ server <- function(input,output){ # aka the code behind the results
     circ_us <- (total_results$Period<high_end & total_results$Period >=low_end & total_results[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
     circ_us[is.na(circ_us)] <- FALSE # na's are false
     if (!input$no_restrict_gamma){
-      circ_us[total_results$`Oscillation Type` == "Overdamped" | total_results$`Oscillation Type` == "Overdriven"] <- FALSE # restricting gamma for circadian genes
+      circ_us[total_results$`Oscillation Type` == "Repressed" | total_results$`Oscillation Type` == "Overexpressed"] <- FALSE # restricting gamma for circadian genes
     }
     
     
@@ -749,8 +751,8 @@ server <- function(input,output){ # aka the code behind the results
     # adjust significance for over damped/driven genes
     circ_over <-  (total_results$Period<high_end & total_results$Period >=low_end & total_results[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
     circ_over[is.na(circ_over)] <- FALSE # na's are false
-    overdriven <- total_results$`Oscillation Type` == "Overdriven" & circ_over
-    overdamped <- total_results$`Oscillation Type` == "Overdamped" & circ_over
+    overexpressed <- total_results$`Oscillation Type` == "Overexpressed" & circ_over
+    repressed <- total_results$`Oscillation Type` == "Repressed" & circ_over
     
     # gene list output based on specified subset
     { 
@@ -777,11 +779,11 @@ server <- function(input,output){ # aka the code behind the results
       else if(input$subset_look == "Harmonic"){
         df<-as.data.frame(cbind(total_results[harmonic,1:15],JTK_results[harmonic,2:4]))
       }
-      else if(input$subset_look == "Overdamped"){
-        df<-as.data.frame(cbind(total_results[overdamped,1:15],JTK_results[overdamped,2:4]))
+      else if(input$subset_look == "Repressed"){
+        df<-as.data.frame(cbind(total_results[repressed,1:15],JTK_results[repressed,2:4]))
       }
-      else if(input$subset_look == "Overdriven"){
-        df<-as.data.frame(cbind(total_results[overdriven,1:15],JTK_results[overdriven,2:4]))
+      else if(input$subset_look == "Overexpressed"){
+        df<-as.data.frame(cbind(total_results[overexpressed,1:15],JTK_results[overexpressed,2:4]))
       }
       else if(input$subset_look == "Nonconverged"){
         df<-as.data.frame(cbind(total_results[nonconv,1:15],JTK_results[nonconv,2:4]))
@@ -1028,23 +1030,23 @@ server <- function(input,output){ # aka the code behind the results
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
           
         }
-        else if(input$subset_look == "Overdriven"){
+        else if(input$subset_look == "Overexpressed"){
           output$text <- renderPrint({
-            summary(total_results[overdriven,input$coeff])
+            summary(total_results[overexpressed,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[overdriven,], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(total_results[overexpressed,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
           
         }
-        else if(input$subset_look == "Overdamped"){
+        else if(input$subset_look == "Repressed"){
           output$text <- renderPrint({
-            summary(total_results[overdamped,input$coeff])
+            summary(total_results[repressed,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[overdamped,], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(total_results[repressed,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1139,8 +1141,8 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("  Damped:", sum(damped & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Driven:", sum(driven & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Hamonic:", sum(harmonic & circ_us,na.rm=TRUE),"\n"))
-          cat(paste("  Overdriven:", sum(overdriven & circ_us,na.rm=TRUE),"\n"))
-          cat(paste("  Overdamped:", sum(overdamped & circ_us,na.rm=TRUE),"\n"))
+          cat(paste("  Overexpressed:", sum(overexpressed & circ_us,na.rm=TRUE),"\n"))
+          cat(paste("  Repressed:", sum(repressed & circ_us,na.rm=TRUE),"\n"))
         })
         plot_viz <- renderPlot({plot_viz <- ggplot()}) # no venn diagram
       }
@@ -1154,8 +1156,8 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("  Damped:", sum(damped & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Driven:", sum(driven & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Hamonic:", sum(harmonic & circ_us,na.rm=TRUE),"\n"))
-          cat(paste("  Overdriven:", sum(overdriven & circ_us,na.rm=TRUE),"\n"))
-          cat(paste("  Overdamped:", sum(overdamped & circ_us,na.rm=TRUE),"\n"))
+          cat(paste("  Overexpressed:", sum(overexpressed & circ_us,na.rm=TRUE),"\n"))
+          cat(paste("  Repressed:", sum(repressed & circ_us,na.rm=TRUE),"\n"))
           cat(paste("Circadian (JTK_CYCLE):", sum(circ_jtk),"\n"))
           cat("Confusion Matrix of Circadian Genes
               JTK_CYCLE
@@ -1216,14 +1218,14 @@ server <- function(input,output){ # aka the code behind the results
         total_results_na <-  total_results[harmonic,]; 
         total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
       }
-      else if(input$heat_subset_look == "Overdriven"){
+      else if(input$heat_subset_look == "Overexpressed"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[overdriven,]; 
+        total_results_na <-  total_results[overexpressed,]; 
         total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
       }
-      else if(input$heat_subset_look == "Overdamped"){
+      else if(input$heat_subset_look == "Repressed"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[overdamped,]; 
+        total_results_na <-  total_results[repressed,]; 
         total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
       }
       else if(input$heat_subset_look == "Both"){
@@ -1245,85 +1247,89 @@ server <- function(input,output){ # aka the code behind the results
         total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
       }
       #total_results_na <-  total_results[!is.na(total_results$Amplitude),]; # filter out the rows where the paremeters are NA
-      if (input$heat_subset_look != "JTK_CYCLE" & input$heat_subset_look != "Theirs"){
-        phase <- total_results_na$`Phase Shift`
-        amp <- total_results_na$Amplitude
+      
+      # don't let it output if jtk requested without JTK_results
+      if (!(!input$is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff"))){
         
-        #loop through every row in replace negative amplitudes with positive ones
-        # adjust the phase shift accordingly
-        for (i in 1:length(phase)) {
-          if(amp[i]<0){
-            amp[i] <- -1*amp[i]
-            #total_results_na[i,16:(15+length(timen)*num_reps)] <- -1*total_results_na[i,16:(15+length(timen)*num_reps)]
-            phase[i] <- phase[i]+pi
+        if (input$heat_subset_look != "JTK_CYCLE" & input$heat_subset_look != "Theirs"){
+          phase <- total_results_na$`Phase Shift`
+          amp <- total_results_na$Amplitude
+          
+          #loop through every row in replace negative amplitudes with positive ones
+          # adjust the phase shift accordingly
+          for (i in 1:length(phase)) {
+            if(amp[i]<0){
+              amp[i] <- -1*amp[i]
+              #total_results_na[i,16:(15+length(timen)*num_reps)] <- -1*total_results_na[i,16:(15+length(timen)*num_reps)]
+              phase[i] <- phase[i]+pi
+            }
+            if(phase[i]>2*pi){
+              phase[i] <- phase[i]-2*pi
+            }
+            if(phase[i]<0){
+              phase[i] <- phase[i]+2*pi
+            }
           }
-          if(phase[i]>2*pi){
-            phase[i] <- phase[i]-2*pi
-          }
-          if(phase[i]<0){
-            phase[i] <- phase[i]+2*pi
-          }
-        }
-      } else {
-        if(input$heat_subset_look == "JTK_CYCLE"){
-          phase <- -1*JTK_results$LAG[circ_jtk]
-          amp <- JTK_results$AMP[circ_jtk]
         } else {
-          phase <- -1*JTK_results$LAG[theirs]
-          amp <- JTK_results$AMP[theirs]
+          if(input$heat_subset_look == "JTK_CYCLE"){
+            phase <- -1*JTK_results$LAG[circ_jtk]
+            amp <- JTK_results$AMP[circ_jtk]
+          } else {
+            phase <- -1*JTK_results$LAG[theirs]
+            amp <- JTK_results$AMP[theirs]
+          }
+          
         }
         
-      }
-      
-      
-      #get matrix of just the relative expression over time
-      hm_mat <- as.matrix(total_results_na[,16:(15+length(timen)*num_reps)])
-      #if there are replicates, average the relative expression for each replicate
-      mtx_reps <- list() # to store actual matrix
-      mtx_count <- list() # to store how many are NA
-      for (i in 1:num_reps){
-        mtx_reps[[i]] <- hm_mat[, seq(i,ncol(hm_mat), by=num_reps)]
-        mtx_count[[i]] <- is.na(mtx_reps[[i]])
-        mtx_reps[[i]][is.na(mtx_reps[[i]])] <- 0
-      }
-      repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(hm_mat))+num_reps # to store how many we should divide by
-      hm_mat <- matrix(0L,ncol = length(timen),nrow = nrow(hm_mat)) # to store the final result
-      for (i in 1:num_reps){
-        hm_mat <- hm_mat + mtx_reps[[i]] # sum the replicates
-        repmtx <- repmtx - mtx_count[[i]] # how many replicates are available for each time point
-      }
-      repmtx[repmtx==0] <- NA # to avoid division by 0 and induce NAs if there are no time points available
-      hm_mat <- hm_mat/repmtx
-      
-      #normalize each row to be between -1 and 1
-      for (i in 1:length(phase)){
-        # gene_mean <-mean(as.matrix(hm_mat[i,]),na.rm=TRUE)
-        # for (j in 1:length(timen)){
-        #   hm_mat[i,j] <- (hm_mat[i,j]-gene_mean)
-        # }
-        gene_max <- max(abs((hm_mat[i,])),na.rm = TRUE)
-        hm_mat[i,] <- hm_mat[i,]/gene_max 
-        # for (j in 1:length(timen)){
-        #   hm_mat[i,j] <- (hm_mat[i,j]/gene_max)
-        # }
-      }
-      
-      #sort by phase shift
-      hm_mat <- hm_mat[order(phase),]
-      
-      output$plot_viz <- renderPlot({
-        par(mar = c(1,2,1,2))
-        image.plot(t(hm_mat),col = blue2yellow(256),xlab = "Hours",ylab = "Expressions",axes=FALSE,lab.breaks=NULL)
         
-      })
-      
-      # time taken to produce heat map
-      end.time <- Sys.time()
-      time.taken.heat <- end.time - start.time
-      output$text <- renderPrint({cat(paste("Render Time:",time.taken.heat,"seconds\n"))
-        cat("Expressions are each row and time points are each column.\n")
-        cat(paste("Number of expressions:",nrow(hm_mat)))})
-      
+        #get matrix of just the relative expression over time
+        hm_mat <- as.matrix(total_results_na[,16:(15+length(timen)*num_reps)])
+        #if there are replicates, average the relative expression for each replicate
+        mtx_reps <- list() # to store actual matrix
+        mtx_count <- list() # to store how many are NA
+        for (i in 1:num_reps){
+          mtx_reps[[i]] <- hm_mat[, seq(i,ncol(hm_mat), by=num_reps)]
+          mtx_count[[i]] <- is.na(mtx_reps[[i]])
+          mtx_reps[[i]][is.na(mtx_reps[[i]])] <- 0
+        }
+        repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(hm_mat))+num_reps # to store how many we should divide by
+        hm_mat <- matrix(0L,ncol = length(timen),nrow = nrow(hm_mat)) # to store the final result
+        for (i in 1:num_reps){
+          hm_mat <- hm_mat + mtx_reps[[i]] # sum the replicates
+          repmtx <- repmtx - mtx_count[[i]] # how many replicates are available for each time point
+        }
+        repmtx[repmtx==0] <- NA # to avoid division by 0 and induce NAs if there are no time points available
+        hm_mat <- hm_mat/repmtx
+        
+        #normalize each row to be between -1 and 1
+        for (i in 1:length(phase)){
+          # gene_mean <-mean(as.matrix(hm_mat[i,]),na.rm=TRUE)
+          # for (j in 1:length(timen)){
+          #   hm_mat[i,j] <- (hm_mat[i,j]-gene_mean)
+          # }
+          gene_max <- max(abs((hm_mat[i,])),na.rm = TRUE)
+          hm_mat[i,] <- hm_mat[i,]/gene_max 
+          # for (j in 1:length(timen)){
+          #   hm_mat[i,j] <- (hm_mat[i,j]/gene_max)
+          # }
+        }
+        
+        #sort by phase shift
+        hm_mat <- hm_mat[order(phase),]
+        
+        output$plot_viz <- renderPlot({
+          par(mar = c(1,2,1,2))
+          image.plot(t(hm_mat),col = blue2yellow(256),xlab = "Hours",ylab = "Expressions",axes=FALSE,lab.breaks=NULL)
+          
+        })
+        
+        # time taken to produce heat map
+        end.time <- Sys.time()
+        time.taken.heat <- end.time - start.time
+        output$text <- renderPrint({cat(paste("Render Time:",time.taken.heat,"seconds\n"))
+          cat("Expressions are each row and time points are each column.\n")
+          cat(paste("Number of expressions:",nrow(hm_mat)))})
+      }
     }
     
     

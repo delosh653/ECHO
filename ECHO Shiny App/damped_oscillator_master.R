@@ -651,7 +651,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     
     # calculating whether (over)damped, (over)driven, harmonic
     if (gam <= -.1){
-      type_gam <- "Overdriven"
+      type_gam <- "Overexpressed"
     } else if (gam <= -.01){
       type_gam <- "Driven"
     } else if (gam <= .01){
@@ -659,7 +659,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     } else if (gam <= .1){
       type_gam <- "Damped"
     } else{
-      type_gam <- "Overdamped"
+      type_gam <- "Repressed"
     }
     
     # calculating the phase shift in terms of period
