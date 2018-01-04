@@ -588,12 +588,13 @@ server <- function(input,output){ # aka the code behind the results
           }
           # always remove constant genes
           data <- data[total_results$Convergence!="No Deviation" | is.na(total_results$Convergence),]
-          annot <- data.frame("Gene.Name" = genes[,1])
+          annot <- data.frame("Gene.Name" = data[,1])
           
           data <- data[,-1]
           jtkdist(length(timen), num_reps) # total time points, replicates per time point
           
-          periods <- ((as.numeric(input$low)/resol):(as.numeric(input$high)/resol)) # looking for rhythms between high-low hours (i.e. between low/resol and high/resol time points per cycle).
+          # looking for rhythms between high-low hours (i.e. between low/resol and high/resol time points per cycle).
+          periods <- ((as.numeric(input$low)/resol):(as.numeric(input$high)/resol)) 
           jtk.init(periods,resol)  # resol is the number of hours between time points
           
           { # run jtk
@@ -609,6 +610,15 @@ server <- function(input,output){ # aka the code behind the results
             JTK_results <- cbind(annot,res,data)
             JTK_results <- JTK_results[order(res$ADJ.P,-res$AMP),]
           }
+          # now to add unexamined genes (unexpressed, constant, etc.)
+          missing_genes <- setdiff(total_results[,1],JTK_results[,1])
+          if (length(missing_genes) > 0){
+            blank <- as.data.frame(matrix(NA,length(missing_genes),ncol(JTK_results)))
+            blank[,1] <- missing_genes
+            colnames(blank) <- colnames(JTK_results)
+            JTK_results <- rbind(JTK_results,blank)
+          }
+          
           end.time <- Sys.time() # end counting time
           time.taken.jtk <- end.time - start.time
           
@@ -718,6 +728,7 @@ server <- function(input,output){ # aka the code behind the results
       else{
         circ_jtk <- (JTK_results$BY.Q<as.numeric(input$pval_cutoff) & JTK_results$PER >=low_end & JTK_results$PER < high_end) #jtk's circadian genes
       }
+      circ_jtk[is.na(circ_jtk)] <- FALSE # na's are false
       # confusion matrix of circadian genes
       #           jtk
       #        yes     no
