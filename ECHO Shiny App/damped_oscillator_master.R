@@ -517,13 +517,13 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
         }
       }
     } else if (resol <= 4){
-      # to deal with complete missingness
-      if(suppressWarnings(max(y_val[i-2],y_val[i-1],y_val[i],y_val[i+1],y_val[i+2],na.rm = TRUE))== -Inf){
-        next
-      }
       
       # go through gene values and find maximum as compared to four surrounding values
       for(i in 3:(length(y_val)-2)){ 
+        # to deal with complete missingness
+        if(suppressWarnings(max(y_val[i-2],y_val[i-1],y_val[i],y_val[i+1],y_val[i+2],na.rm = TRUE))== -Inf){
+          next
+        }
         if (y_val[i] == max(y_val[i-2],y_val[i-1],y_val[i],y_val[i+1],y_val[i+2],na.rm = TRUE)){
           peaks[counting] <- y_val[i]
           peaks_time[counting] <- times[i]
@@ -531,13 +531,12 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
         }
       }
     } else{
-      # to deal with complete missingness
-      if(suppressWarnings(max(y_val[i-2],y_val[i-1],y_val[i],y_val[i+1],y_val[i+2],na.rm = TRUE))== -Inf){
-        next
-      }
-      
       # go through gene values and find maximum as compared to two surrounding values
       for(i in 2:(length(y_val)-1)){ 
+        # to deal with complete missingness
+        if(suppressWarnings(max(y_val[i-2],y_val[i-1],y_val[i],y_val[i+1],y_val[i+2],na.rm = TRUE))== -Inf){
+          next
+        }
         if (y_val[i] == max(y_val[i-1],y_val[i],y_val[i+1], na.rm = TRUE)){
           peaks[counting] <- y_val[i]
           peaks_time[counting] <- times[i]
@@ -691,7 +690,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     
     return (results)
   }, error = function(e){ # if there's failure in convergence
-    
+
     if (num_reps == 1){
       results <- data.frame(gene = gene_n, conv = NA, iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA, tau = NA, pval = NA)
       results <- cbind(results, y_val, rbind(rep(NA,length(times))))
@@ -699,7 +698,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
       results <- data.frame(gene = gene_n, conv = NA, iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA, tau = NA, pval = NA)
       results <- cbind(results, rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(rep(NA,length(times))))
     }
-    
+
     return (results)
   })
 }
