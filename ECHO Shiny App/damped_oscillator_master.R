@@ -431,7 +431,7 @@ calc_tau_and_p_jtk <- function(ref_waveform,times,num_reps,current_gene,jtklist)
 #   pval: P-value calculated based on Kendall's tau
 #   original.values: original values for gene
 #   fitted.values: fitted values for gene
-calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,jtklist=list()){
+calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,rem_unexpr_amt=70,jtklist=list()){
   
   # if(is_smooth){ # smooth the data, if requested
   #   if (tied){ # if paired replicates
@@ -460,7 +460,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
   
   # then we need to check if 70% are expressed (if desired)
   if (rem_unexpr){
-    if (genes_unexpressed(current_gene)){
+    if (genes_unexpressed(current_gene,rem_unexpr_amt)){
       if (num_reps == 1){ # one replicate
         
         results <- data.frame(gene = gene_n, conv = "Unexpressed", iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA, tau = NA, pval = NA)
@@ -730,11 +730,11 @@ is_deviating_rep <- function(current_gene,num_reps){
 #  current_gene: row number of current gene we want to calculate parameters for
 # outputs:
 #  boolean if there is 70% expression
-genes_unexpressed <- function(current_gene){
+genes_unexpressed <- function(current_gene,rem_unexpr_amt){
   y_val <- genes[current_gene,!as.logical(is.na(genes[current_gene,]))]
   y_val <- y_val[,-1]
   tot_expressed <- sum(y_val != 0)
-  return(tot_expressed <= (length(y_val)*.7))
+  return(tot_expressed <= (length(y_val)*rem_unexpr_amt))
 }
 
 # function to adjust pvals according to the benjamini-hochberg criterion

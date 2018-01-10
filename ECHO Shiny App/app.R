@@ -122,6 +122,8 @@ ui <- fluidPage(
                  
                  div(style="display: inline-block;",
                      checkboxInput("rem_unexpr", "Remove unexpressed genes?", value = FALSE, width = NULL)),
+                 div(style="display: inline-block; width: 95px;",
+                     numericInput("rem_unexpr_amt", "Threshold %?", value = 70,min = 0, max = 100, step = 1, width = NULL)),
                  div(style="display: inline-block; vertical-align:top;  width: 20px;",
                      actionButton("remove_help", icon("question", lib="font-awesome"))),tags$br(),
                  uiOutput("Help_remove"),
@@ -172,7 +174,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.2")
+                              tags$p("ECHO Version 1.3")
                               ))
                               )),
                  
@@ -227,7 +229,7 @@ ui <- fluidPage(
         
         selectInput("pval_cat","Enter P-Value Adjustment to View (for PDG, Heat Maps, Gene Lists)",c("BH Adj P-Value", "BY Adj P-Value", "P-Value")),
         
-        textInput("pval_cutoff","Enter P-Value Significance Cutoff (for PDG, Heat Maps, Gene Lists)", value = ".05"),
+        numericInput("pval_cutoff","Enter P-Value Significance Cutoff (for PDG, Heat Maps, Gene Lists)",min = 0, max = 1, step = .01, value = 0.05),
         
         selectInput("coeff","Choose Coefficient to View (for PDG)",c("Gamma","Amplitude","Omega","Period","Phase Shift","Hours Shifted", "Equilibrium Value", "Tau", "P-Value", "BH Adj P-Value", "BY Adj P-Value")),
         
@@ -289,7 +291,7 @@ ui <- fluidPage(
                               tags$p("If multiple replicates, the original data is plotted with shading between the max and min
                                      at each data point, as well as the original data for each replicate (up to 8 replicates).
                                      The fitted data is plotted as a black line. A summary of the parameters for that gene 
-                                     appears below the plot."),
+                                     appears below the plot. Replicates are colored in the following manner (1 to 8): red, blue, green, yellow, purple, pink, orange, magenta."),
                               
                               HTML('<center><img src="gamma_density_Neurospora_Replicates_Unsmoothed.PNG" style="width:300px"></center><br>'),
                               HTML('<center>'),tags$b("Parameter Density Graph (PDG):"),HTML('</center>'),
@@ -347,7 +349,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_remove=renderUI({ #remove unexpressed genes help
       if(input$remove_help%%2){
-        helpText("If checked, marks and does not fit genes that have low detection/expression in the dataset. A gene is considered adequately expressed for modeling if a nonzero value is available for at least 70% of the total time points. By default, genes with a zero value at all time points are marked and not fit to allow appropriate calculation of multiple hypothesis corrections. Recommended.")
+        helpText("If checked, marks and does not fit genes that have low detection/expression in the dataset. A gene is considered adequately expressed for modeling if a nonzero value is available for at least the specified threshold percentage of the total time points. A 70% threshold is recommended. By default, genes with a zero value at all time points are marked and not fit to allow appropriate calculation of multiple hypothesis corrections. Recommended.")
       }
       else{
         return()
@@ -463,6 +465,7 @@ server <- function(input,output){ # aka the code behind the results
         
         # run all genes:
         rem_unexpr <- input$rem_unexpr # indicator for removing unexpressed genes
+        rem_unexpr_amt <- (input$rem_unexpr_amt)/100 # threshold for removing unexpressed genes, converted to a decimal
         
         # figuring out whether smoothing is wanted
         if (!input$smooth){ # no smoothing
@@ -528,7 +531,7 @@ server <- function(input,output){ # aka the code behind the results
         
         # where we put the result
         total_results <- foreach (i=1:nrow(genes), .combine = rbind, .packages='minpack.lm',.options.snow = opts) %dopar% {
-          calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr,jtklist)
+          calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, jtklist)
         }
         close(pb)
         
@@ -551,7 +554,7 @@ server <- function(input,output){ # aka the code behind the results
         
         # time measured - output
         end.time <- Sys.time()
-        time.taken.echo <- end.time - start.time
+        time.taken.echo <- difftime(end.time,start.time,units = "mins")
         
         # assigning everything to the global environment in order to save them
         total_results <<- total_results
@@ -620,7 +623,7 @@ server <- function(input,output){ # aka the code behind the results
           }
           
           end.time <- Sys.time() # end counting time
-          time.taken.jtk <- end.time - start.time
+          time.taken.jtk <- difftime(end.time,start.time,units = "mins")
           
           JTK_results <<- JTK_results
           
@@ -630,9 +633,9 @@ server <- function(input,output){ # aka the code behind the results
         # download results ----
         
         output$finish <- renderPrint({cat("Done!\n")
-          cat(paste("ECHO Time:",time.taken.echo,"\n"))
+          cat(paste("ECHO Time:",time.taken.echo,"mins\n"))
           if (input$run_jtk && input$high != "" && input$low != ""){
-            cat(paste("JTK Time:",time.taken.jtk))
+            cat(paste("JTK Time:",time.taken.jtk,"mins"))
           }
         })
         
@@ -682,7 +685,12 @@ server <- function(input,output){ # aka the code behind the results
         output$downloadRData <- downloadHandler( # Visualization results
           filename = function() { paste(input$project,'.RData', sep='') },
           content = function(file) {
-            save.image(file)
+            if (input$run_jtk && input$high != "" && input$low != ""){
+              save(file=file,list=c("JTK_results","total_results","num_reps","low","high","timen"))
+            } else {
+              save(file=file,list=c("total_results","num_reps","low","high","timen"),file)
+            }
+            
           }
         )
         
@@ -836,7 +844,7 @@ server <- function(input,output){ # aka the code behind the results
         rep_genes <- total_results[total_results$'Gene Name'==input$gene_name,16:(15+(length(timen)*num_reps))]
         
         ribbon.df <- data.frame(matrix(ncol = 4+num_reps, nrow = length(timen)))
-        colnames(ribbon.df) <- c("timen","Fit","Min","Max", paste(rep("Rep",num_reps),c(1:3), sep=".")) # assigning column names
+        colnames(ribbon.df) <- c("Times","Fit","Min","Max", paste(rep("Rep",num_reps),c(1:3), sep=".")) # assigning column names
         ribbon.df$Times <- timen
         ribbon.df$Fit <- t(total_results[total_results$'Gene Name'==input$gene_name,c((16+(length(timen)*num_reps)):ncol(total_results))]) # assigning the fit
         ribbon.df$Min <- sapply(seq(1,ncol(rep_genes), by = num_reps), function(x) min(unlist(rep_genes[,c(x:(num_reps-1+x))]), na.rm = TRUE)) # getting min values of replicates
@@ -944,9 +952,9 @@ server <- function(input,output){ # aka the code behind the results
                          "Original"="grey")
           
           plot_viz<-ggplot(data = ribbon.df,aes(x=Times))+ # declare the dataframe and main variables
-            geom_ribbon(aes(x=Times, ymax=Max, ymin=Min, colour=color_bar),
+            geom_ribbon(aes(x=Times, ymax=Max, ymin=Min, colour="Original"),
                         fill = "gray", alpha = 0.5)+ # create shading
-            geom_line(aes(y=Fit,colour=color_bar))+ # fitted values
+            geom_line(aes(y=Fit,colour="Fit"))+ # fitted values
             ggtitle(paste(input$gene_name))+ # gene name is title
             scale_color_manual("",values=color_bar)+
             scale_fill_manual("",values=color_bar)+
@@ -1151,7 +1159,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Circadian (ECHO):", sum(circ_us),"\n"))
           cat(paste("  Damped:", sum(damped & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Driven:", sum(driven & circ_us,na.rm=TRUE),"\n"))
-          cat(paste("  Hamonic:", sum(harmonic & circ_us,na.rm=TRUE),"\n"))
+          cat(paste("  Harmonic:", sum(harmonic & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Overexpressed:", sum(overexpressed & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Repressed:", sum(repressed & circ_us,na.rm=TRUE),"\n"))
         })
@@ -1166,7 +1174,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Circadian (ECHO):", sum(circ_us),"\n"))
           cat(paste("  Damped:", sum(damped & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Driven:", sum(driven & circ_us,na.rm=TRUE),"\n"))
-          cat(paste("  Hamonic:", sum(harmonic & circ_us,na.rm=TRUE),"\n"))
+          cat(paste("  Harmonic:", sum(harmonic & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Overexpressed:", sum(overexpressed & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Repressed:", sum(repressed & circ_us,na.rm=TRUE),"\n"))
           cat(paste("Circadian (JTK_CYCLE):", sum(circ_jtk),"\n"))
