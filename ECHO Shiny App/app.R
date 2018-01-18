@@ -415,7 +415,7 @@ server <- function(input,output){ # aka the code behind the results
         print(paste("Started on:",Sys.time()))
         if (input$use_example){
           # load example datasets and images
-          genes <- read.csv("DataExample.csv", header = TRUE)
+          genes <- read.csv("DataExample.csv", header = TRUE, stringsAsFactors = FALSE)
           
           # creating times sequence used for the genes
           num_reps <- 3
@@ -460,9 +460,6 @@ server <- function(input,output){ # aka the code behind the results
           genes <- norm_list$dat
         }
         
-        # getting average data, for more than one replicate
-        avg_genes <- avg_all_rep(num_reps)
-        
         # run all genes:
         rem_unexpr <- input$rem_unexpr # indicator for removing unexpressed genes
         rem_unexpr_amt <- (input$rem_unexpr_amt)/100 # threshold for removing unexpressed genes, converted to a decimal
@@ -486,6 +483,9 @@ server <- function(input,output){ # aka the code behind the results
             }
           }
         }
+        
+        # getting average data, for more than one replicate
+        avg_genes <- avg_all_rep(num_reps)
         
         
         # figuring out whether a range is wanted, adjusting accordingly
@@ -591,7 +591,7 @@ server <- function(input,output){ # aka the code behind the results
           }
           # always remove constant genes
           data <- data[total_results$Convergence!="No Deviation" | is.na(total_results$Convergence),]
-          annot <- data.frame("Gene.Name" = data[,1])
+          annot <- data.frame("Gene.Name" = data[,1],stringsAsFactors = FALSE)
           
           data <- data[,-1]
           jtkdist(length(timen), num_reps) # total time points, replicates per time point
