@@ -444,23 +444,22 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
   
   gene_n <- as.character(genes[current_gene,1]) # gene name
   # first we need to check whether or not the gene is just a straight line
-  if (num_reps == 1){ # one replicate
-    if (!is_deviating(current_gene)){
+  if (!is_deviating(current_gene)){ # one replicate
+    if (num_reps == 1){
       results <- data.frame(gene = gene_n, conv = "No Deviation", iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA,  tau = NA, pval = NA, stringsAsFactors = FALSE)
       results <- cbind(results, rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(rep(NA,length(times))))
       return (results)
     }
-  } else{ # multiple replicates
-    if (!is_deviating_rep(current_gene,num_reps)){
+    else{ # multiple replicates
       results <- data.frame(gene = gene_n, conv = "No Deviation", iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA,  tau = NA, pval = NA, stringsAsFactors = FALSE)
       results <- cbind(results, rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(rep(NA,length(times))))
       return (results)
-    }
+    } 
   }
   
   # then we need to check if 70% are expressed (if desired)
   if (rem_unexpr){
-    if (genes_unexpressed(current_gene,rem_unexpr_amt)){
+    if (rem_unexpr_vect[current_gene]){
       if (num_reps == 1){ # one replicate
         
         results <- data.frame(gene = gene_n, conv = "Unexpressed", iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA, tau = NA, pval = NA, stringsAsFactors = FALSE)
@@ -703,6 +702,39 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
   })
 }
 
+#UNNEEDED
+# function for determining whether gene values are deviating or constant for full matrix
+# inputs:
+#  current_gene: row number of current gene we want to calculate parameters for
+# outputs:
+#  boolean vector if there is deviation within the gene values
+is_deviating_all <- function(){
+  #get matrix of just the relative expression over time
+  all_reps <- as.matrix(genes[,2:ncol(genes)])
+  
+  # vector of standard deviations
+  all_row_stdev <- sqrt(rowSums((all_reps - rowMeans(all_reps,na.rm = TRUE))^2, na.rm = TRUE)/(dim(all_reps)[2] - 1))
+  
+  # return vector if there is deviation within the gene values
+  return (all_row_stdev != 0)
+}
+
+# function for determining whether gene values are unexpressed (less than 70% expressed (i.e., not 0)) for full matrix
+# inputs:
+#  current_gene: row number of current gene we want to calculate parameters for
+# outputs:
+#  boolean if there is 70% expression
+genes_unexpressed_all <- function(rem_unexpr_amt){
+  #get matrix of just the relative expression over time
+  all_reps <- as.matrix(genes[,2:ncol(genes)])
+  # get how many genes are expressed for each gene
+  tot_expressed <- rowSums(all_reps != 0,na.rm = TRUE)
+  
+  # return false if amount is less than threshold
+  return(tot_expressed <= (ncol(all_reps)*rem_unexpr_amt))
+}
+
+
 # function for determining whether gene values are deviating or constant (one replicate)
 # inputs:
 #  current_gene: row number of current gene we want to calculate parameters for
@@ -713,6 +745,7 @@ is_deviating <- function(current_gene){
   return (stdev != 0)
 }
 
+# DEPRECIATED
 # function for determining whether gene values are deviating or constant (multiple replicates)
 # inputs:
 #  current_gene: row number of current gene we want to calculate parameters for
@@ -733,7 +766,7 @@ is_deviating_rep <- function(current_gene,num_reps){
 genes_unexpressed <- function(current_gene,rem_unexpr_amt){
   y_val <- genes[current_gene,!as.logical(is.na(genes[current_gene,]))]
   y_val <- y_val[,-1]
-  tot_expressed <- sum(y_val != 0)
+  tot_expressed <- sum(y_val != 0,na.rm = TRUE)
   return(tot_expressed <= (length(y_val)*rem_unexpr_amt))
 }
 

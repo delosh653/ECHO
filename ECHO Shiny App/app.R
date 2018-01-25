@@ -174,7 +174,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.31")
+                              tags$p("ECHO Version 1.4")
                               ))
                               )),
                  
@@ -333,7 +333,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_smooth=renderUI({ # data smoothing help
       if(input$smooth_help%%2){
-        helpText("Indicates whether data should be smoothed, which also depends on type of data. If checked, the data is weighted smoothed over a rolling window of 3 points, with each of the points having weights of 1,2,1 respectively. If biological data, each replicate is smoothed independently. If technical data, each time point is smoothed by itself, centered, and the average expression per time point on either side. Note: this will increase running time.")
+        helpText("Indicates whether data should be smoothed, which also depends on type of data. If checked, the data is weighted smoothed over a rolling window of 3 points, with each of the points having weights of 1,2,1 respectively. If biological data, each replicate is smoothed independently. If technical data, each time point is smoothed by itself, centered, and the average expression per time point on either side. Smoothed data will be returned in output files. Note: this will increase running time.")
       }
       else{
         return()
@@ -381,7 +381,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_normal=renderUI({
       if(input$normal_help%%2){ # forcing coefficient help
-        helpText("Normalizes data by row using the normal distribution (subtract each row by row mean and divide by row standard deviation). Normalized data is returned in results, rather than original data. Recommended for un-normalized data. If you have normalized your data in any way, this option is strongly not recommended.")
+        helpText("Normalizes data by row using the normal distribution (subtract each row by row mean and divide by row standard deviation). Normalized data is returned in results, rather than original data. Normalized data will be returned in output files. Recommended for un-normalized data. If you have normalized your data in any way, this option is strongly not recommended.")
       }
       else{
         return()
@@ -454,15 +454,20 @@ server <- function(input,output){ # aka the code behind the results
           add_one <- FALSE # marker for appropriate displays for progress bar
         }
         
+        # run all genes:
+        
+        rem_unexpr <- input$rem_unexpr # indicator for removing unexpressed genes
+        rem_unexpr_amt <- (input$rem_unexpr_amt)/100 # threshold for removing unexpressed genes, converted to a decimal
+        # if yes, check for genes that are unexpressed before preprocessing
+        if (rem_unexpr){
+          rem_unexpr_vect <- genes_unexpressed_all(rem_unexpr_amt)
+        }
+        
         # normalize and store original data
         if (input$is_normal){
           norm_list <- normalize_all()
           genes <- norm_list$dat
         }
-        
-        # run all genes:
-        rem_unexpr <- input$rem_unexpr # indicator for removing unexpressed genes
-        rem_unexpr_amt <- (input$rem_unexpr_amt)/100 # threshold for removing unexpressed genes, converted to a decimal
         
         # figuring out whether smoothing is wanted
         if (!input$smooth){ # no smoothing
@@ -587,10 +592,18 @@ server <- function(input,output){ # aka the code behind the results
           }
           # remove unexpressed genes if desired
           if (rem_unexpr){
-            data <- data[total_results$Convergence!="Unexpressed" | is.na(total_results$Convergence),]
+            # logical of which entries to remove
+            rem_choices <- !(total_results$Convergence=="Unexpressed" | total_results$Convergence=="No Deviation")
+            rem_choices[is.na(rem_choices)] <- TRUE
+            
+            data <- data[rem_choices,]
+          } else { # always remove constant genes
+            # logical of which entries to remove
+            rem_choices <- !(total_results$Convergence=="No Deviation")
+            rem_choices[is.na(rem_choices)] <- TRUE
+            
+            data <- data[rem_choices,]
           }
-          # always remove constant genes
-          data <- data[total_results$Convergence!="No Deviation" | is.na(total_results$Convergence),]
           annot <- data.frame("Gene.Name" = data[,1],stringsAsFactors = FALSE)
           
           data <- data[,-1]
