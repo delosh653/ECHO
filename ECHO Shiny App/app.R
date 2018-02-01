@@ -174,7 +174,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.4")
+                              tags$p("ECHO Version 1.41")
                               ))
                               )),
                  
@@ -469,6 +469,9 @@ server <- function(input,output){ # aka the code behind the results
           genes <- norm_list$dat
         }
         
+        # getting average data, for more than one replicate
+        avg_genes <- avg_all_rep(num_reps)
+        
         # figuring out whether smoothing is wanted
         if (!input$smooth){ # no smoothing
           is_smooth <- FALSE
@@ -489,8 +492,10 @@ server <- function(input,output){ # aka the code behind the results
           }
         }
         
-        # getting average data, for more than one replicate
-        avg_genes <- avg_all_rep(num_reps)
+        if (is_smooth){ # average should correspond to smoothed data
+          # not unsmoothed data
+          avg_genes <- avg_all_rep(num_reps)
+        }
         
         
         # figuring out whether a range is wanted, adjusting accordingly
