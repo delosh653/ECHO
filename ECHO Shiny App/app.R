@@ -733,7 +733,7 @@ server <- function(input,output){ # aka the code behind the results
     low_end <- 2*pi/low
     high_end <- 2*pi/high
     
-    circ_us <- (total_results$Period<high_end & total_results$Period >=low_end & total_results[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
+    circ_us <- (total_results$Period<=high_end & total_results$Period >=low_end & total_results[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
     circ_us[is.na(circ_us)] <- FALSE # na's are false
     if (!input$no_restrict_gamma){
       circ_us[total_results$`Oscillation Type` == "Repressed" | total_results$`Oscillation Type` == "Overexpressed"] <- FALSE # restricting gamma for circadian genes
@@ -746,13 +746,13 @@ server <- function(input,output){ # aka the code behind the results
       JTK_results <- JTK_results[order(JTK_results[,1]),] # reorder JTK rows to be the same as our result's rows
       
       if (input$pval_cat == "P-Value"){
-        circ_jtk <- (JTK_results$ADJ.P<as.numeric(input$pval_cutoff) & JTK_results$PER >=low_end & JTK_results$PER < high_end) #jtk's circadian genes
+        circ_jtk <- (JTK_results$ADJ.P<as.numeric(input$pval_cutoff) & JTK_results$PER >=low_end & JTK_results$PER <= high_end) #jtk's circadian genes
       }
       else if(input$pval_cat == "BH Adj P-Value"){
-        circ_jtk <- (JTK_results$BH.Q<as.numeric(input$pval_cutoff) & JTK_results$PER >=low_end & JTK_results$PER < high_end) #jtk's circadian genes
+        circ_jtk <- (JTK_results$BH.Q<as.numeric(input$pval_cutoff) & JTK_results$PER >=low_end & JTK_results$PER <= high_end) #jtk's circadian genes
       }
       else{
-        circ_jtk <- (JTK_results$BY.Q<as.numeric(input$pval_cutoff) & JTK_results$PER >=low_end & JTK_results$PER < high_end) #jtk's circadian genes
+        circ_jtk <- (JTK_results$BY.Q<as.numeric(input$pval_cutoff) & JTK_results$PER >=low_end & JTK_results$PER <= high_end) #jtk's circadian genes
       }
       circ_jtk[is.na(circ_jtk)] <- FALSE # na's are false
       # confusion matrix of circadian genes
@@ -786,7 +786,7 @@ server <- function(input,output){ # aka the code behind the results
     harmonic <- total_results$`Oscillation Type` == "Harmonic" & circ_us
     
     # adjust significance for over damped/driven genes
-    circ_over <-  (total_results$Period<high_end & total_results$Period >=low_end & total_results[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
+    circ_over <-  (total_results$Period<=high_end & total_results$Period >=low_end & total_results[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
     circ_over[is.na(circ_over)] <- FALSE # na's are false
     overexpressed <- total_results$`Oscillation Type` == "Overexpressed" & circ_over
     repressed <- total_results$`Oscillation Type` == "Repressed" & circ_over
