@@ -580,12 +580,22 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
       if (high == -Inf || low == Inf){
         w0 <- 2*pi/(length(times)*resol/2)
       } else{
-        w0 <- 2*pi/(length(times)*resol/((high+low)/2))
+        # want to get their actual integer period values
+        highfix <- (high/2/pi)^-1
+        lowfix <- (low/2/pi)^-1
+        w0 <- 2*pi/(length(times)*resol/((highfix+lowfix)/2))
       }
     } else if (length(peaks) == 1){ # phase shift cases only one peak to appear
       w0 <- 2*pi/(length(times)*resol/(length(peaks)+1))
     } else{
       w0 <- 2*pi/(length(times)*resol/(length(peaks)))
+    }
+    
+    # can't be outside the specified parameters
+    if (w0 > low){
+      w0 <- low
+    } else if (w0 < high){
+      w0 <- high
     }
     
     
@@ -648,13 +658,13 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     y_shift <- parameters[5]
     
     # calculating whether (over)damped, (over)driven, harmonic
-    if (gam <= -.1){
+    if (gam < -.15){
       type_gam <- "Overexpressed"
     } else if (gam <= -.01){
       type_gam <- "Driven"
     } else if (gam <= .01){
       type_gam <- "Harmonic"
-    } else if (gam <= .1){
+    } else if (gam <= .15){
       type_gam <- "Damped"
     } else{
       type_gam <- "Repressed"

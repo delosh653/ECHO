@@ -174,7 +174,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.41")
+                              tags$p("ECHO Version 1.5")
                               ))
                               )),
                  
