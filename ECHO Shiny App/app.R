@@ -174,7 +174,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.5")
+                              tags$p("ECHO Version 1.51")
                               ))
                               )),
                  
@@ -242,10 +242,15 @@ ui <- fluidPage(
         
         div(style="display: inline-block;",
             selectInput("heat_subset_look","Subset of Data to View (for Heat Maps)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Repressed","Overexpressed","Both","Theirs","Ours","Diff"))),
-        
         div(style="display: inline-block; vertical-align:top;  width: 20px;",
             actionButton("heat_subset_help", icon("question", lib="font-awesome"))),
         uiOutput("Help_heat_subset"),
+        
+        div(style="display: inline-block;",
+            textInput("heat_subset_rep","Enter Replicate to View (for Heat Maps)", value = "all")),
+        div(style="display: inline-block; vertical-align:top;  width: 20px;",
+            actionButton("heat_subset_rep_help", icon("question", lib="font-awesome"))),
+        uiOutput("Help_heat_subset_rep"),
         
         # action buttons for visualization and downloading results
         actionButton("go","Visualize!"),
@@ -276,7 +281,7 @@ ui <- fluidPage(
                               
                               HTML('<center><img src="heat_map_Neurospora_Replicates_Unsmoothed.PNG" style="width:200px"></center><br>'),
                               HTML('<center>'),tags$b("Heat Map:"),HTML('</center>'),
-                              tags$p("A heat map of the expression data for indicated subset of results (not including constant, unexpressed, or overly noisy data). Each expression appears on the y axis and time on the x axis. Expressions are sorted from top to bottom by phase and normalized to be in the range [-1,1]."),
+                              tags$p("A heat map of the expression data for indicated subset of results (not including constant, unexpressed, or overly noisy data). Each expression appears on the y axis and time on the x axis. Expressions are sorted from top to bottom by phase and normalized to be in the range [-1,1]. If 'all' is entered for heat maps, an average of all expressions for replicates is shown. Otherwise, a replicate number is entered to display the expressions for a specific replicate."),
                               
                               HTML('<center><img src="wc1_gene_expression_wo_rep_Neurospora_Replicates_Unsmoothed.PNG" style="width:300px"></center><br>'),
                               HTML('<center>'),tags$b("Gene Expressions:"),HTML('</center>'),
@@ -333,7 +338,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_smooth=renderUI({ # data smoothing help
       if(input$smooth_help%%2){
-        helpText("Indicates whether data should be smoothed, which also depends on type of data. If checked, the data is weighted smoothed over a rolling window of 3 points, with each of the points having weights of 1,2,1 respectively. If biological data, each replicate is smoothed independently. If technical data, each time point is smoothed by itself, centered, and the average expression per time point on either side. Smoothed data will be returned in output files. Note: this will increase running time.")
+        helpText("Indicates whether data should be smoothed, which also depends on type of data. If checked, the data is weighted smoothed over a rolling window of 3 points, with each of the points having weights of 1,2,1 respectively. If paired data, each replicate is smoothed independently. If unpaired data, each time point is smoothed by itself, centered, and the average expression per time point on either side. Smoothed data will be returned in output files. Note: this will increase running time.")
       }
       else{
         return()
@@ -390,6 +395,14 @@ server <- function(input,output){ # aka the code behind the results
     output$Help_heat_subset=renderUI({
       if(input$heat_subset_help%%2){ # forcing coefficient help
         helpText("Identifies which subset of data to view for heat map visualizations. For more information regarding what terms such as 'Both' and 'Theirs' mean, please view Venn Diagram summary. Note 1: Forcing coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
+      }
+      else{
+        return()
+      }
+    })
+    output$Help_heat_subset_rep=renderUI({
+      if(input$heat_subset_rep_help%%2){ # forcing coefficient help
+        helpText("Identifies which replicate of data to view for heat map visualizations. If 'all' is entered, average of all replicates will be displayed. Otherwise, enter number of replicate to display (1 through total number of replicates). Note: visualization of specific replicates only recommended for paired data.")
       }
       else{
         return()
@@ -1219,7 +1232,7 @@ server <- function(input,output){ # aka the code behind the results
       
       start.time <- Sys.time() # begin counting time
       
-      if (!input$is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff")){
+      if (!input$is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff" || (input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) > num_reps) || input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) <= 0)){
         output$text <- renderPrint({
           "N/A"
         })
@@ -1321,22 +1334,30 @@ server <- function(input,output){ # aka the code behind the results
         
         #get matrix of just the relative expression over time
         hm_mat <- as.matrix(total_results_na[,16:(15+length(timen)*num_reps)])
-        #if there are replicates, average the relative expression for each replicate
-        mtx_reps <- list() # to store actual matrix
-        mtx_count <- list() # to store how many are NA
-        for (i in 1:num_reps){
-          mtx_reps[[i]] <- hm_mat[, seq(i,ncol(hm_mat), by=num_reps)]
-          mtx_count[[i]] <- is.na(mtx_reps[[i]])
-          mtx_reps[[i]][is.na(mtx_reps[[i]])] <- 0
+        
+        if (input$heat_subset_rep == "all"){ # make an average of replicates
+          #if there are replicates, average the relative expression for each replicate
+          mtx_reps <- list() # to store actual matrix
+          mtx_count <- list() # to store how many are NA
+          for (i in 1:num_reps){
+            mtx_reps[[i]] <- hm_mat[, seq(i,ncol(hm_mat), by=num_reps)]
+            mtx_count[[i]] <- is.na(mtx_reps[[i]])
+            mtx_reps[[i]][is.na(mtx_reps[[i]])] <- 0
+          }
+          repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(hm_mat))+num_reps # to store how many we should divide by
+          hm_mat <- matrix(0L,ncol = length(timen),nrow = nrow(hm_mat)) # to store the final result
+          for (i in 1:num_reps){
+            hm_mat <- hm_mat + mtx_reps[[i]] # sum the replicates
+            repmtx <- repmtx - mtx_count[[i]] # how many replicates are available for each time point
+          }
+          repmtx[repmtx==0] <- NA # to avoid division by 0 and induce NAs if there are no time points available
+          hm_mat <- hm_mat/repmtx
+          
+        } else { # display only one time point
+          # subset the heat map
+          rep_looking_at <- as.numeric(input$heat_subset_rep)
+          hm_mat <- hm_mat[,seq(rep_looking_at,ncol(hm_mat),by=rep_looking_at)]
         }
-        repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(hm_mat))+num_reps # to store how many we should divide by
-        hm_mat <- matrix(0L,ncol = length(timen),nrow = nrow(hm_mat)) # to store the final result
-        for (i in 1:num_reps){
-          hm_mat <- hm_mat + mtx_reps[[i]] # sum the replicates
-          repmtx <- repmtx - mtx_count[[i]] # how many replicates are available for each time point
-        }
-        repmtx[repmtx==0] <- NA # to avoid division by 0 and induce NAs if there are no time points available
-        hm_mat <- hm_mat/repmtx
         
         #normalize each row to be between -1 and 1
         for (i in 1:length(phase)){
