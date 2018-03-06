@@ -1232,7 +1232,7 @@ server <- function(input,output){ # aka the code behind the results
       
       start.time <- Sys.time() # begin counting time
       
-      if (!input$is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff" || (input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) > num_reps) || input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) <= 0)){
+      if (!input$is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff" || input$heat_subset_rep != "all" && is.na(as.numeric(input$heat_subset_rep)) || (input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) > num_reps) || input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) <= 0)){
         output$text <- renderPrint({
           "N/A"
         })
@@ -1356,7 +1356,7 @@ server <- function(input,output){ # aka the code behind the results
         } else { # display only one time point
           # subset the heat map
           rep_looking_at <- as.numeric(input$heat_subset_rep)
-          hm_mat <- hm_mat[,seq(rep_looking_at,ncol(hm_mat),by=rep_looking_at)]
+          hm_mat <- hm_mat[,seq(rep_looking_at,ncol(hm_mat),by=num_reps)]
         }
         
         #normalize each row to be between -1 and 1
