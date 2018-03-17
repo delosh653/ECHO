@@ -118,8 +118,6 @@ ui <- fluidPage(
                      actionButton("smooth_help", icon("question", lib="font-awesome"))),
                  uiOutput("Help_smooth"),
                  
-                 checkboxInput("run_jtk", "Run JTK_CYCLE as well?", value = FALSE, width = NULL),
-                 
                  div(style="display: inline-block;",
                      checkboxInput("rem_unexpr", "Remove unexpressed genes?", value = FALSE, width = NULL)),
                  div(style="display: inline-block; width: 95px;",
@@ -133,6 +131,14 @@ ui <- fluidPage(
                  div(style="display: inline-block; vertical-align:top;  width: 20px;",
                      actionButton("normal_help", icon("question", lib="font-awesome"))),tags$br(),
                  uiOutput("Help_normal"),
+                 
+                 div(style="display: inline-block;",
+                     checkboxInput("is_de_linear_trend", "Remove linear trends?", value = FALSE, width = NULL)),
+                 div(style="display: inline-block; vertical-align:top;  width: 20px;",
+                     actionButton("de_linear_trend_help", icon("question", lib="font-awesome"))),tags$br(),
+                 uiOutput("Help_de_linear_trend"),
+                 
+                 checkboxInput("run_jtk", "Run JTK_CYCLE as well?", value = FALSE, width = NULL),
                  
                  # action buttons for running echo code and downloading results
                  actionButton("find_rhythms", "Find Rhythms!"),tags$br(),
@@ -174,31 +180,44 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.51")
+                              tags$p("ECHO Version 1.6")
                               ))
                               )),
                  
-                 tabPanel("System Requirements",
+                 tabPanel("Interpreting Your Result Files",
                           tags$div(class="header",checked=NA,
-                                   list(
-                                     tags$b("Note the following requirements:"),tags$br(),
-                                     ("Programs:"),tags$br(),
-                                     ("- Firefox or Chrome browser"),tags$br(),
-                                     ("- R"),tags$br(),
-                                     ("- RStudio"),tags$br(),tags$br(),
-                                     ("R packages:"),tags$br(),
-                                     (" - shiny: version 1.0.3 or later"),tags$br(),
-                                     (" - rstudioapi: version 0.6 or later"),tags$br(),
-                                     (" - iterators: version 1.0.8 or later"),tags$br(),
-                                     (" - minpack.lm: version 1.2-1 or later"),tags$br(),
-                                     (" - VennDiagram: version 1.6.17 or later"),tags$br(),
-                                     (" - ggplot2: version 2.2.1 or later"),tags$br(),
-                                     (" - doSNOW: version 1.0.14 or later"),tags$br(),
-                                     (" - doParallel: version 1.0.10 or later"),tags$br(),
-                                     (" - foreach: version 1.4.3 or later"),tags$br(),
-                                     (" - reshape2: version 1.4.2 or later"),tags$br(),
-                                     (" - fields: version 3.0.1 or later"),tags$br(),
-                                     (" - colorRamps: version 2.3 or later"),tags$br()
+                                   list(tags$p("Once you run ECHO (and possibly JTK_CYCLE), there are three results files that you have the possibility of downloading: and ECHO CSV, a JTK_CYCLE CSV, and an .RData file. Below, you can find an explanation of the contents of each of the CSV file. If a column has an asterisk next to it, you can check our published paper for more in-depth information."),
+                                        
+                                     ("ECHO CSV has the following columns:"),tags$br(),
+                                     ("- Gene Name: The name of each expression, as entered in the original data file."),tags$br(),
+                                     ("- Convergence: Whether or not ECHO's fitting method converged for each expression. This column will also contain markers for 'No Deviation', which means a constant gene, or 'Unexpressed', if removing unexpressed genes was selected during the run."),tags$br(),
+                                     ("- Iterations: Amount of iterations for ECHO's fitting method."),tags$br(),
+                                     ("- Forcing.Coefficient*: Parameter which states the amount of amplitude change over time in the system."),tags$br(),
+                                     ("- Oscillation Type*: States the expression's category based on forcing coefficient (driven, damped, harmonic, overexpressed, repressed)."),tags$br(),
+                                     ("- Amplitude*: Parameter describing initial amplitude of expression."),tags$br(),
+                                     ("- Radian.Frequency*: Parameter describing frequency of oscillations, in radians."),tags$br(),
+                                     ("- Period*: States the time for one complete oscillation, assumed to be in hours."),tags$br(),
+                                     ("- Phase Shift*: Parameter describing the amount the oscillator is shifted, in radians."),tags$br(),
+                                     ("- Hours Shifted: Desribes the amount the oscillator is shifted in hours, calculated from phase shift and fitted period."),tags$br(),
+                                     ("- Equilibrium Value*: Parameter describing the center of the oscillator, i.e. the line the expression oscillates around."),tags$br(),
+                                     ("- Tau*: Calculated to determine p-values using Kendall's Tau."),tags$br(),
+                                     ("- P-Value*: Significance of ECHO fit, unadjusted."),tags$br(),
+                                     ("- BH Adj P-Value*: Significance of ECHO fit, adjusted using the Benjamini-Hochberg criterion. Corrects for multiple hypothesis testing."),tags$br(),
+                                     ("- BY Adj P-Value*: Significance of ECHO fit, adjusted using the Benhamini-Yekutieli criterion (more stringent). Corrects for multiple hypothesis testing."),tags$br(),
+                                     ("- Original TPX.R: Your original data for time point (TP) X, and replicate R."),tags$br(),
+                                     ("- Fitted TPX.R: ECHO's fitted data for time point (TP) X, and replicate R."),tags$br(),tags$br(),
+                                     
+                                     ("JTK_CYCLE CSV has the following columns:"),tags$br(),
+                                     ("- Gene Name: The name of each expression, as entered in the original data file."),tags$br(),
+                                     ("- BY.Q: Significance of JTK fit (ADJ.P), adjusted using the Benhamini-Yekutieli criterion (more stringent). Corrects for multiple hypothesis testing."),tags$br(),
+                                     ("- BH.Q: Significance of JTK fit (ADJ.P), adjusted using the Benjamini-Hochberg criterion. Corrects for multiple hypothesis testing."),tags$br(),
+                                     ("- ADJ.P: Significance of JTK fit, adjusted internally."),tags$br(),
+                                     ("- PER: Period of one complete oscillation."),tags$br(),
+                                     ("- LAG: Hours delayed for expression."),tags$br(),
+                                     ("- AMP: Amplitude."),tags$br(),
+                                     ("- Original data, complete with original names, then follows."),tags$br(),tags$br(),
+                                     
+                                     tags$p("The .RData file contains a series of R objects that are necessary for the automatic visualizations on the next tab. These objects include the ECHO and JTK output and user input information.")
                                    )))
                  # tabPanel("Gene List")
                  #tabPanel("Gene Clustering",plotOutput("plot_genes", height = "650px")),
@@ -216,7 +235,6 @@ ui <- fluidPage(
         
         fileInput("file","Upload Results File (.RData) *", accept=c(".RData", ".Rds")),
         
-        checkboxInput("is_jtk", "JTK_CYCLE results available?", value = FALSE, width = NULL),
         div(style="display: inline-block;",
             checkboxInput("no_restrict_gamma", "Include repressed/overexpressed genes?", value = FALSE, width = NULL)),
         div(style="display: inline-block; vertical-align:top;  width: 20px;",
@@ -231,7 +249,7 @@ ui <- fluidPage(
         
         numericInput("pval_cutoff","Enter P-Value Significance Cutoff (for PDG, Heat Maps, Gene Lists)",min = 0, max = 1, step = .01, value = 0.05),
         
-        selectInput("coeff","Choose Coefficient to View (for PDG)",c("Gamma","Amplitude","Omega","Period","Phase Shift","Hours Shifted", "Equilibrium Value", "Tau", "P-Value", "BH Adj P-Value", "BY Adj P-Value")),
+        selectInput("coeff","Choose Coefficient to View (for PDG)",c("Forcing.Coefficient","Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted", "Equilibrium Value", "Tau", "P-Value", "BH Adj P-Value", "BY Adj P-Value")),
         
         div(style="display: inline-block;",
             selectInput("subset_look","Subset of Data to View (for PDG and Gene Lists)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Repressed","Overexpressed","Nonconverged","Nonstarter","No Deviation","Both","Theirs","Ours","Diff"))),
@@ -277,7 +295,7 @@ ui <- fluidPage(
                               HTML('<center>'),tags$b("Venn Diagram:"),HTML('</center>'),
                               tags$p("A Venn Diagram of ECHO results compared to JTK_CYCLE results (if available). A text 
                                      summary also appears below the Venn Diagram. If JTK_CYCLE results are not available,
-                                     a text summary of ECHO results appear below a blank plot."),
+                                     a text summary of ECHO results appear below a blank plot. In addition, user inputs are displayed below the text summary."),
                               
                               HTML('<center><img src="heat_map_Neurospora_Replicates_Unsmoothed.PNG" style="width:200px"></center><br>'),
                               HTML('<center>'),tags$b("Heat Map:"),HTML('</center>'),
@@ -408,6 +426,14 @@ server <- function(input,output){ # aka the code behind the results
         return()
       }
     })
+    output$Help_de_linear_trend=renderUI({
+      if(input$de_linear_trend_help%%2){ # forcing coefficient help
+        helpText("If checked, removes linear trend, or baseline, from data. For paired replicates, the linear trend is computed and removed from each replicate. For unpaired data, the linear trend is computed and removed from all replicates together.")
+      }
+      else{
+        return()
+      }
+    })
     
     
     # run echo with maybe jtk ----
@@ -474,12 +500,19 @@ server <- function(input,output){ # aka the code behind the results
         # if yes, check for genes that are unexpressed before preprocessing
         if (rem_unexpr){
           rem_unexpr_vect <- genes_unexpressed_all(rem_unexpr_amt)
+        } else{
+          rem_unexpr_vect <- rep(TRUE,nrow(genes))
         }
         
         # normalize and store original data
         if (input$is_normal){
           norm_list <- normalize_all()
           genes <- norm_list$dat
+        }
+        
+        # remove baseline
+        if (input$is_de_linear_trend){
+          genes <- de_linear_trend_all(timen,num_reps,tied)
         }
         
         # getting average data, for more than one replicate
@@ -561,7 +594,7 @@ server <- function(input,output){ # aka the code behind the results
         stopCluster(cl) # stop using the clusters
         
         # renaming columns of the final results
-        colnames(total_results) <- c("Gene Name","Convergence","Iterations","Gamma","Oscillation Type","Amplitude","Omega","Period","Phase Shift","Hours Shifted","Equilibrium Value", "Tau", "P-Value", paste(rep("Original CT",length(rep(timen, each = num_reps))),rep(timen, each = num_reps),rep(".",length(rep(timen, each = num_reps))),rep(c(1:num_reps), length(timen)),sep=""), paste(rep("Fitted CT",length(timen)),timen,sep=""))
+        colnames(total_results) <- c("Gene Name","Convergence","Iterations","Forcing.Coefficient","Oscillation Type","Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted","Equilibrium Value", "Tau", "P-Value", paste(rep("Original TP",length(rep(timen, each = num_reps))),rep(timen, each = num_reps),rep(".",length(rep(timen, each = num_reps))),rep(c(1:num_reps), length(timen)),sep=""), paste(rep("Fitted TP",length(timen)),timen,sep=""))
         
         # remove the fake row I added if there is only one gene
         if (add_one){
@@ -587,6 +620,18 @@ server <- function(input,output){ # aka the code behind the results
         high <<- high
         
         print(paste("Ended on:",Sys.time())) # show ending time in console window
+        
+        user_input <<- list("ECHO_end_date" = Sys.time(),
+                            "begin"=begin,
+                            "end"=end,
+                            "resol"=resol,
+                            "tied"=tied,
+                            "is_smooth"=input$smooth,
+                            "rem_unexpr"=rem_unexpr,
+                            "rem_unexpr_amt"=rem_unexpr_amt,
+                            "is_normal"=input$is_normal,
+                            "is_de_linear_trend"=input$is_de_linear_trend,
+                            "run_jtk"=input$run_jtk)
         
         # jtk run -----
         
@@ -628,7 +673,12 @@ server <- function(input,output){ # aka the code behind the results
           jtkdist(length(timen), num_reps) # total time points, replicates per time point
           
           # looking for rhythms between high-low hours (i.e. between low/resol and high/resol time points per cycle).
-          periods <- ((as.numeric(input$low)/resol):(as.numeric(input$high)/resol)) 
+          if (!input$use_example){
+            periods <- ((as.numeric(input$low)/resol):(as.numeric(input$high)/resol))
+          } else {
+            periods <- ((20/resol):(26/resol))
+            
+          }
           jtk.init(periods,resol)  # resol is the number of hours between time points
           
           { # run jtk
@@ -665,7 +715,7 @@ server <- function(input,output){ # aka the code behind the results
         
         output$finish <- renderPrint({cat("Done!\n")
           cat(paste("ECHO Time:",time.taken.echo,"mins\n"))
-          if (input$run_jtk && input$high != "" && input$low != ""){
+          if ((input$run_jtk && input$high != "" && input$low != "") | (input$run_jtk && input$use_example)){
             cat(paste("JTK Time:",time.taken.jtk,"mins"))
           }
         })
@@ -704,7 +754,7 @@ server <- function(input,output){ # aka the code behind the results
             write.csv(total_results,file, row.names = F)
           }
         )
-        if (input$run_jtk && input$high != "" && input$low != ""){
+        if ((input$run_jtk && input$high != "" && input$low != "") | (input$run_jtk && input$use_example)){
           output$downloadJTK <- downloadHandler( # JTK_CYCLE results
             filename = function() { paste('JTK_',input$project,'.csv', sep='') },
             content = function(file) {
@@ -716,10 +766,10 @@ server <- function(input,output){ # aka the code behind the results
         output$downloadRData <- downloadHandler( # Visualization results
           filename = function() { paste(input$project,'.RData', sep='') },
           content = function(file) {
-            if (input$run_jtk && input$high != "" && input$low != ""){
-              save(file=file,list=c("JTK_results","total_results","num_reps","low","high","timen"))
+            if ((input$run_jtk && input$high != "" && input$low != "") | (input$run_jtk && input$use_example)){
+              save(file=file,list=c("JTK_results","total_results","num_reps","low","high","timen","user_input"))
             } else {
-              save(file=file,list=c("total_results","num_reps","low","high","timen"),file)
+              save(file=file,list=c("total_results","num_reps","low","high","timen","user_input"),file)
             }
             
           }
@@ -743,6 +793,9 @@ server <- function(input,output){ # aka the code behind the results
   observeEvent(input$go, {
     load(input$file$datapath) # load .RData file -- contains evenronment produced from running our oscillator code
     
+    # call upon user input
+    is_jtk <- user_input$run_jtk
+    
     low_end <- 2*pi/low
     high_end <- 2*pi/high
     
@@ -753,7 +806,7 @@ server <- function(input,output){ # aka the code behind the results
     }
     
     
-    if (input$is_jtk){
+    if (is_jtk){
       # getting JTK circadian genes
       JTK_results[,1] <- factor(JTK_results[,1], levels = unique(total_results$`Gene Name`)) # match JTK rows to our rows
       JTK_results <- JTK_results[order(JTK_results[,1]),] # reorder JTK rows to be the same as our result's rows
@@ -787,7 +840,7 @@ server <- function(input,output){ # aka the code behind the results
     }
     
     # logicals
-    nas_found <- (is.na(total_results$Gamma)) # amount of nas
+    nas_found <- (is.na(total_results$Forcing.Coefficient)) # amount of nas
     nonconv <- ((total_results$Convergence==0)) # amount of results that didn't converge
     nodev <- (total_results$Convergence=="No Deviation") # results with no standard deviation deviation
     nodev[is.na(nodev)] <- FALSE # na's are false
@@ -806,55 +859,115 @@ server <- function(input,output){ # aka the code behind the results
     
     # gene list output based on specified subset
     { 
-      if (!input$is_jtk && (input$subset_look == "JTK" || input$subset_look == "Both" || input$subset_look == "Theirs" || input$subset_look == "Ours" || input$subset_look == "Diff")){
+      if (!is_jtk && (input$subset_look == "JTK" || input$subset_look == "Both" || input$subset_look == "Theirs" || input$subset_look == "Ours" || input$subset_look == "Diff")){
         df<- data.frame()
       }
-      if(input$subset_look == "None"){
-        df<-as.data.frame(cbind(total_results[,1:15],JTK_results[,2:4]))
+      else if(input$subset_look == "None"){
+        if (is_jtk){
+          df<-as.data.frame(cbind(total_results[,1:15],JTK_results[,2:4]))
+        } else {
+          df<-as.data.frame(total_results[,1:15])
+        }
       }
       else if(input$subset_look == "JTK_CYCLE"){
-        df <-as.data.frame(cbind(total_results[circ_jtk,1:15],JTK_results[circ_jtk,2:4]))
+        if(is_jtk){
+          df <-as.data.frame(cbind(total_results[circ_jtk,1:15],JTK_results[circ_jtk,2:4]))
+        } else {
+          df<-as.data.frame(total_results[circ_jtk,1:15])
+        }
         
       }
       else if(input$subset_look == "ECHO"){
-        df<-as.data.frame(cbind(total_results[circ_us,1:15],JTK_results[circ_us,2:4]))
-        
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[circ_us,1:15],JTK_results[circ_us,2:4]))
+        } else {
+          df<-as.data.frame(total_results[circ_us,1:15])
+        }
       }
       else if(input$subset_look == "Damped"){
-        df<-as.data.frame(cbind(total_results[damped,1:15],JTK_results[damped,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[damped,1:15],JTK_results[damped,2:4]))
+        } else {
+          df<-as.data.frame(total_results[damped,1:15])
+        }
       }
       else if(input$subset_look == "Driven"){
-        df<-as.data.frame(cbind(total_results[driven,1:15],JTK_results[driven,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[driven,1:15],JTK_results[driven,2:4]))
+        } else {
+          df<-as.data.frame(total_results[driven,1:15])
+        }
       }
       else if(input$subset_look == "Harmonic"){
-        df<-as.data.frame(cbind(total_results[harmonic,1:15],JTK_results[harmonic,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[harmonic,1:15],JTK_results[harmonic,2:4]))
+        } else {
+          df<-as.data.frame(total_results[harmonic,1:15])
+        }
       }
       else if(input$subset_look == "Repressed"){
-        df<-as.data.frame(cbind(total_results[repressed,1:15],JTK_results[repressed,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[repressed,1:15],JTK_results[repressed,2:4]))
+        } else {
+          df<-as.data.frame(total_results[repressed,1:15])
+        }
+        
       }
       else if(input$subset_look == "Overexpressed"){
-        df<-as.data.frame(cbind(total_results[overexpressed,1:15],JTK_results[overexpressed,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[overexpressed,1:15],JTK_results[overexpressed,2:4]))
+        } else {
+          df<-as.data.frame(total_results[overexpressed,1:15])
+        }
       }
       else if(input$subset_look == "Nonconverged"){
-        df<-as.data.frame(cbind(total_results[nonconv,1:15],JTK_results[nonconv,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[nonconv,1:15],JTK_results[nonconv,2:4]))
+        } else {
+          df<-as.data.frame(total_results[nonconv,1:15])
+        }
       }
       else if(input$subset_look == "Nonstarter"){
-        df<-as.data.frame(cbind(total_results[nas_found-nodev,1:15],JTK_results[nas_found-nodev,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[nas_found-nodev,1:15],JTK_results[nas_found-nodev,2:4]))
+        } else {
+          df<-as.data.frame(total_results[nas_found-nodev,1:15])
+        }
       }
       else if(input$subset_look == "No Deviation"){
-        df<-as.data.frame(cbind(total_results[nodev,1:15],JTK_results[nodev,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[nodev,1:15],JTK_results[nodev,2:4]))
+        } else {
+          df<-as.data.frame(total_results[nodev,1:15])
+        }
       }
       else if(input$subset_look == "Both"){
-        df<-as.data.frame(cbind(total_results[both,1:15],JTK_results[both,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[both,1:15],JTK_results[both,2:4]))
+        } else {
+          df<-as.data.frame(total_results[both,1:15])
+        }
       }
       else if(input$subset_look == "Theirs"){
-        df<-as.data.frame(cbind(total_results[theirs,1:15],JTK_results[theirs,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[theirs,1:15],JTK_results[theirs,2:4]))
+        } else {
+          df<-as.data.frame(total_results[theirs,1:15])
+        }
       }
       else if(input$subset_look == "Ours"){
-        df<-as.data.frame(cbind(total_results[ours,1:15],JTK_results[ours,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[ours,1:15],JTK_results[ours,2:4]))
+        } else {
+          df<-as.data.frame(total_results[ours,1:15])
+        }
       }
       else if(input$subset_look == "Diff"){
-        df<-as.data.frame(cbind(total_results[diff,1:15],JTK_results[diff,2:4]))
+        if(is_jtk){
+          df<-as.data.frame(cbind(total_results[diff,1:15],JTK_results[diff,2:4]))
+        } else {
+          df<-as.data.frame(total_results[diff,1:15])
+        }
       }
       
       output$table <- renderDataTable({
@@ -900,10 +1013,10 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Gene Name:",total_results$`Gene Name`[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Convergence:", total_results$Convergence[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Iterations:",total_results$Iterations[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Forcing Coefficient (Gamma):", total_results$Gamma[total_results$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Forcing Coefficient:", total_results$Forcing.Coefficient[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Oscillation Type:",total_results$`Oscillation Type`[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Amplitude", total_results$Amplidtude[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Omega:",total_results$Omega[total_results$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Radian.Frequency:",total_results$Radian.Frequency[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Period:",total_results$Period[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Phase Shift:",total_results$`Phase Shift`[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Hours Shifted:",total_results$`Hours Shifted`[total_results$`Gene Name`==input$gene_name],"\n"))
@@ -961,10 +1074,10 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Gene Name:",total_results$`Gene Name`[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Convergence:", total_results$Convergence[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Iterations:",total_results$Iterations[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Forcing Coefficient (Gamma):", total_results$Gamma[total_results$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Forcing Coefficient:", total_results$Forcing.Coefficient[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Oscillation Type:",total_results$`Oscillation Type`[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Amplitude", total_results$Amplidtude[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Omega:",total_results$Omega[total_results$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Radian.Frequency:",total_results$Radian.Frequency[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Period:",total_results$Period[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Phase Shift:",total_results$`Phase Shift`[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Hours Shifted:",total_results$`Hours Shifted`[total_results$`Gene Name`==input$gene_name],"\n"))
@@ -1008,7 +1121,7 @@ server <- function(input,output){ # aka the code behind the results
         # the summary is a 5-number summary of the coefficient
         
         # you can't have JTK and look at JTK_specific subsets
-        if (!input$is_jtk && (input$subset_look == "JTK" || input$subset_look == "Both" || input$subset_look == "Theirs" || input$subset_look == "Ours" || input$subset_look == "Diff")){
+        if (!is_jtk && (input$subset_look == "JTK" || input$subset_look == "Both" || input$subset_look == "Theirs" || input$subset_look == "Ours" || input$subset_look == "Diff")){
           output$text <- renderPrint({
             "N/A"
           })
@@ -1019,7 +1132,7 @@ server <- function(input,output){ # aka the code behind the results
             summary(total_results[,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[!is.na(total_results$Gamma),], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(total_results[!is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1107,7 +1220,7 @@ server <- function(input,output){ # aka the code behind the results
             summary(total_results[nonconv,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[nonconv & !is.na(total_results$Gamma),], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(total_results[nonconv & !is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1117,7 +1230,7 @@ server <- function(input,output){ # aka the code behind the results
             summary(total_results[nas_found-nodev,input$coeff])
           })
           
-          plot_viz<- ggplot(total_results[(nas_found-nodev) & !is.na(total_results$Gamma),], aes_string(ggname(input$coeff))) +
+          plot_viz<- ggplot(total_results[(nas_found-nodev) & !is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1127,7 +1240,7 @@ server <- function(input,output){ # aka the code behind the results
             summary(total_results[nodev,input$coeff])
           })
           
-          ggplot(total_results[nodev & !is.na(total_results$Gamma),], aes_string(ggname(input$coeff))) +
+          ggplot(total_results[nodev & !is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1148,7 +1261,7 @@ server <- function(input,output){ # aka the code behind the results
             summary(total_results[theirs,input$coeff])
           })
           
-          plot_viz<- ggplot(total_results[theirs & !is.na(total_results$Gamma),], aes_string(ggname(input$coeff))) +
+          plot_viz<- ggplot(total_results[theirs & !is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1168,7 +1281,7 @@ server <- function(input,output){ # aka the code behind the results
             summary(total_results[diff,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[diff & !is.na(total_results$Gamma),], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(total_results[diff & !is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1180,7 +1293,7 @@ server <- function(input,output){ # aka the code behind the results
       # summary is an overall summary of how extended harmonic oscillators did, both internally and compared to JTK
       plot_viz <- ggplot()
       
-      if (!input$is_jtk){
+      if (!is_jtk){
         output$text <- renderPrint({ 
           # generate summary of outputs given by ECHO
           cat(paste("Nonconverged:",sum(nonconv,na.rm=TRUE),"\n"))
@@ -1193,6 +1306,24 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("  Harmonic:", sum(harmonic & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Overexpressed:", sum(overexpressed & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Repressed:", sum(repressed & circ_us,na.rm=TRUE),"\n"))
+          
+          # also put user inputs
+          cat("\n")
+          cat("User Inputs:\n")
+          cat(paste("ECHO End Date and Time: ",user_input$ECHO_end_date,"\n"))
+          cat(paste("Begin: ",user_input$begin,"\n"))
+          cat(paste("End: ",user_input$end,"\n"))
+          cat(paste("Resolution: ",user_input$resol,"\n"))
+          cat(paste("Number of Replicates: ",num_reps,"\n"))
+          cat(paste("Seeking Rhythms, Lower End: ",low_end,"\n"))
+          cat(paste("Seeking Rhythms, Higher End: ",high_end,"\n"))
+          cat(paste("Paired Replicates: ",user_input$tied,"\n"))
+          cat(paste("Smoothing?: ",user_input$is_smooth,"\n"))
+          cat(paste("Remove unexpressed genes?: ",user_input$rem_unexpr,"\n"))
+          cat(paste("Remove unexpressed genes, percentage: ",user_input$rem_unexpr_amt,"\n"))
+          cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
+          cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
+          cat(paste("Run JTK?: ",user_input$run_jtk,"\n"))
         })
         plot_viz <- renderPlot({plot_viz <- ggplot()}) # no venn diagram
       }
@@ -1218,6 +1349,24 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Theirs:",sum(theirs,na.rm=TRUE),"\n"))
           cat(paste("Ours:",sum(ours,na.rm=TRUE),"\n"))
           cat(paste("Diff:",sum(diff,na.rm=TRUE),"\n"))
+          
+          # also put user inputs
+          cat("\n")
+          cat("User Inputs:\n")
+          cat(paste("ECHO End Date and Time: ",user_input$ECHO_end_date,"\n"))
+          cat(paste("Begin: ",user_input$begin,"\n"))
+          cat(paste("End: ",user_input$end,"\n"))
+          cat(paste("Resolution: ",user_input$resol,"\n"))
+          cat(paste("Number of Replicates: ",num_reps,"\n"))
+          cat(paste("Seeking Rhythms, Lower End: ",low_end,"\n"))
+          cat(paste("Seeking Rhythms, Higher End: ",high_end,"\n"))
+          cat(paste("Paired Replicates: ",user_input$tied,"\n"))
+          cat(paste("Smoothing?: ",user_input$is_smooth,"\n"))
+          cat(paste("Remove unexpressed genes?: ",user_input$rem_unexpr,"\n"))
+          cat(paste("Remove unexpressed genes, percentage: ",user_input$rem_unexpr_amt,"\n"))
+          cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
+          cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
+          cat(paste("Run JTK?: ",user_input$run_jtk,"\n"))
         })
         
         output$plot_viz <- renderPlot({
@@ -1232,7 +1381,7 @@ server <- function(input,output){ # aka the code behind the results
       
       start.time <- Sys.time() # begin counting time
       
-      if (!input$is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff" || input$heat_subset_rep != "all" && is.na(as.numeric(input$heat_subset_rep)) || (input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) > num_reps) || input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) <= 0)){
+      if (!is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff" || input$heat_subset_rep != "all" && is.na(as.numeric(input$heat_subset_rep)) || (input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) > num_reps) || input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) <= 0)){
         output$text <- renderPrint({
           "N/A"
         })
@@ -1299,7 +1448,7 @@ server <- function(input,output){ # aka the code behind the results
       #total_results_na <-  total_results[!is.na(total_results$Amplitude),]; # filter out the rows where the paremeters are NA
       
       # don't let it output if jtk requested without JTK_results
-      if (!(!input$is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff"))){
+      if (!(!is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff"))){
         
         if (input$heat_subset_look != "JTK_CYCLE" & input$heat_subset_look != "Theirs"){
           phase <- total_results_na$`Phase Shift`
@@ -1359,12 +1508,18 @@ server <- function(input,output){ # aka the code behind the results
           hm_mat <- hm_mat[,seq(rep_looking_at,ncol(hm_mat),by=num_reps)]
         }
         
+        # center rows around mean
+        # vector of row means
+        all_row_mean <- rowMeans(hm_mat, na.rm = TRUE)
+        hm_mat <- hm_mat - all_row_mean
+        
         #normalize each row to be between -1 and 1
         for (i in 1:length(phase)){
           # gene_mean <-mean(as.matrix(hm_mat[i,]),na.rm=TRUE)
           # for (j in 1:length(timen)){
           #   hm_mat[i,j] <- (hm_mat[i,j]-gene_mean)
           # }
+          
           gene_max <- max(abs((hm_mat[i,])),na.rm = TRUE)
           hm_mat[i,] <- hm_mat[i,]/gene_max 
           # for (j in 1:length(timen)){

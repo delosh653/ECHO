@@ -6,7 +6,7 @@
 # function to represent damped oscillator with phase and equilibrium shift formula
 # inputs:
 #  a: Amplitude
-#  gam: Gamma (amount of damping/driving)
+#  gam: Forcing.Coefficient (amount of damping/driving)
 #  omega: Radial frequency
 #  phi: Phase Shift (radians)
 #  y_shift: Equilibrium shift
@@ -489,6 +489,19 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     counting <- 1; # counter
     if (resol <= 1){
       # go through gene values and find maximum as compared to 8 surrounding values
+      # finding peaks for first 4 points
+      # deal with complete missingness
+      # if (suppressWarnings(max(y_val[1:9], na.rm = TRUE)) != -Inf){
+      #   for (i in 1:4){
+      #     # otherwise continue as normal
+      #     if (y_val[i] == max(y_val[1:9], na.rm = TRUE)){
+      #       peaks[counting] <- y_val[i]
+      #       peaks_time[counting] <- times[i]
+      #       counting <- counting+1
+      #     }
+      #   }
+      # }
+      
       for(i in 5:(length(y_val)-4)){ 
         # deal with complete missingness
         if (suppressWarnings(max(y_val[i-4],y_val[i-3],y_val[i-2],y_val[i-1],y_val[i],y_val[i+1],y_val[i+2],y_val[i+3],y_val[i+4], na.rm = TRUE)) == -Inf){
@@ -501,8 +514,33 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
           counting <- counting+1
         }
       }
+      
+      # finding peaks for last 4 points
+      # deal with complete missingness
+      # if (suppressWarnings(max(y_val[(length(y_val)-8):length(y_val)], na.rm = TRUE)) != -Inf){
+      #   for (i in (length(y_val)-3):length(y_val)){
+      #     # otherwise continue as normal
+      #     if (y_val[i] == max(y_val[(length(y_val)-8):length(y_val)], na.rm = TRUE)){
+      #       peaks[counting] <- y_val[i]
+      #       peaks_time[counting] <- times[i]
+      #       counting <- counting+1
+      #     }
+      #   }
+      # }
     } else if (resol <=2){
       # go through gene values and find maximum as compared to six surrounding values
+      # finding peaks for first 3 points
+      # deal with complete missingness
+      # if (suppressWarnings(max(y_val[1:7], na.rm = TRUE)) != -Inf){
+      #   for (i in 1:3){
+      #     # otherwise continue as normal
+      #     if (y_val[i] == max(y_val[1:7], na.rm = TRUE)){
+      #       peaks[counting] <- y_val[i]
+      #       peaks_time[counting] <- times[i]
+      #       counting <- counting+1
+      #     }
+      #   }
+      # }
       for(i in 4:(length(y_val)-3)){ 
         # deal with complete missingness
         if (suppressWarnings(max(y_val[i-3],y_val[i-2],y_val[i-1],y_val[i],y_val[i+1],y_val[i+2],y_val[i+3], na.rm = TRUE)) == -Inf){
@@ -515,8 +553,31 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
           counting <- counting+1
         }
       }
+      # finding peaks for last 3 points
+      # deal with complete missingness
+      # if (suppressWarnings(max(y_val[(length(y_val)-6):length(y_val)], na.rm = TRUE)) != -Inf){
+      #   for (i in (length(y_val)-2):length(y_val)){
+      #     # otherwise continue as normal
+      #     if (y_val[i] == max(y_val[(length(y_val)-6):length(y_val)], na.rm = TRUE)){
+      #       peaks[counting] <- y_val[i]
+      #       peaks_time[counting] <- times[i]
+      #       counting <- counting+1
+      #     }
+      #   }
+      # }
     } else if (resol <= 4){
-      
+      # finding peaks for first 2 points
+      # deal with complete missingness
+      # if (suppressWarnings(max(y_val[1:5], na.rm = TRUE)) != -Inf){
+      #   for (i in 1:2){
+      #     # otherwise continue as normal
+      #     if (y_val[i] == max(y_val[1:5], na.rm = TRUE)){
+      #       peaks[counting] <- y_val[i]
+      #       peaks_time[counting] <- times[i]
+      #       counting <- counting+1
+      #     }
+      #   }
+      # }
       # go through gene values and find maximum as compared to four surrounding values
       for(i in 3:(length(y_val)-2)){ 
         # to deal with complete missingness
@@ -529,7 +590,34 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
           counting <- counting+1
         }
       }
+      
+      # finding peaks for last 3 points
+      # deal with complete missingness
+      # if (suppressWarnings(max(y_val[(length(y_val)-4):length(y_val)], na.rm = TRUE)) != -Inf){
+      #   for (i in (length(y_val)-1):length(y_val)){
+      #     # otherwise continue as normal
+      #     if (y_val[i] == max(y_val[(length(y_val)-4):length(y_val)], na.rm = TRUE)){
+      #       peaks[counting] <- y_val[i]
+      #       peaks_time[counting] <- times[i]
+      #       counting <- counting+1
+      #     }
+      #   }
+      # }
+      
     } else{
+      # finding peaks for first point
+      # deal with complete missingness
+      # if (suppressWarnings(max(y_val[1:3], na.rm = TRUE)) != -Inf){
+      #   for (i in 1){
+      #     # otherwise continue as normal
+      #     if (y_val[i] == max(y_val[1:3], na.rm = TRUE)){
+      #       peaks[counting] <- y_val[i]
+      #       peaks_time[counting] <- times[i]
+      #       counting <- counting+1
+      #     }
+      #   }
+      # }
+      
       # go through gene values and find maximum as compared to two surrounding values
       for(i in 2:(length(y_val)-1)){ 
         # to deal with complete missingness
@@ -542,6 +630,19 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
           counting <- counting+1
         }
       }
+      
+      # finding peaks for last 3 points
+      # deal with complete missingness
+      # if (suppressWarnings(max(y_val[(length(y_val)-2):length(y_val)], na.rm = TRUE)) != -Inf){
+      #   for (i in length(y_val)){
+      #     # otherwise continue as normal
+      #     if (y_val[i] == max(y_val[(length(y_val)-2):length(y_val)], na.rm = TRUE)){
+      #       peaks[counting] <- y_val[i]
+      #       peaks_time[counting] <- times[i]
+      #       counting <- counting+1
+      #     }
+      #   }
+      # }
     }
     
     # calculate starting amplitude, y_shift
@@ -1030,4 +1131,71 @@ smoothing_untied <- function(current_gene, is_weighted, num_reps){
   }
   
   return(dat)
+}
+
+# DEPRECIATED
+de_linear_trend <- function(current_gene, time_begin, time_end, resol,num_reps,timen,
+                            rem_unexpr_vect){
+  if (!rem_unexpr_vect[current_gene]){
+    gene_n <- as.character(genes[current_gene,1]) # gene name
+    rep_timen <- rep(timen,each=num_reps)
+    y_val <- as.numeric(as.character(t(genes[current_gene,-1]))) # all the y values
+    #do linear regression
+    trend_test <- lm((y_val) ~ rep_timen)
+    coeff <- trend_test$coefficients # resulting coefficients
+    
+    # detrend the data
+    adjusted_y_val <- y_val - (coeff[1] + rep_timen*coeff[2])
+    df2 <- cbind(data.frame("Gene.Name" = gene_n),rbind(adjusted_y_val))
+    colnames(df2) <- colnames(genes)
+    return (df2)
+  } else {
+    return (genes[current_gene,])
+  }
+ 
+}
+
+# function to remove linear trend from all data
+de_linear_trend_all <- function(timen,num_reps,tied){
+  all_rep <- as.matrix(genes[,-1]) # y values for linear fit
+  if (!tied){ # if they're not paired, we just fit an aggregate data model
+    
+    # x values for linear fit
+    xrow <- rep(timen,each=num_reps)
+    xmtx <- matrix(rep(xrow,each=nrow(all_rep)),nrow = nrow(all_rep))
+    
+    # covariance
+    cov <- rowSums((all_rep-rowMeans(all_rep,na.rm = TRUE))*(xmtx-rowMeans(xmtx)),na.rm = TRUE)
+    # variance
+    var <- rowSums((xmtx - rowMeans(xmtx))^2,na.rm = TRUE)
+    
+    beta <- cov/var
+    alph <- rowMeans(all_rep,na.rm = TRUE)-(beta*rowMeans(xmtx))
+    
+    df <- all_rep-(alph+(beta*xmtx)) # linear fit
+  } else { # we have to do the models separately for each replicate
+    # preallocate matrix where we put results
+    df <- matrix(NA, nrow = dim(all_rep)[1], ncol = dim(all_rep)[2])
+    
+    # x values for linear fit
+    xmtx <- matrix(rep(timen,each=nrow(all_rep)),nrow = nrow(all_rep))
+    for (i in 1:num_reps){
+      each_rep <- all_rep[,seq(i,ncol(all_rep),by=num_reps)]
+      
+      # covariance
+      cov <- rowSums((each_rep-rowMeans(each_rep,na.rm = TRUE))*(xmtx-rowMeans(xmtx)),na.rm = TRUE)
+      # variance
+      var <- rowSums((xmtx - rowMeans(xmtx))^2,na.rm = TRUE)
+      
+      beta <- cov/var
+      alph <- rowMeans(each_rep,na.rm = TRUE)-(beta*rowMeans(xmtx))
+      
+      df[,seq(i,ncol(all_rep),by=num_reps)] <- each_rep -(alph+(beta*xmtx)) # linear fit
+    }
+  }
+  # get the data frame correctly set up for returning
+  res_df <- genes
+  res_df[,-1] <- df
+  
+  return (res_df)
 }
