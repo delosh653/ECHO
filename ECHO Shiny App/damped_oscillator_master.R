@@ -1,7 +1,7 @@
-# Damped Oscillations Function Source
+# Extended Oscillations Function Source
 # By Hannah De los Santos
-# Last update: 11/6/17
-# Code description: Contains all the funcitons for damped harmonic oscillator work, in order to have less confusion between scripts. Never copy-paste anything!
+# ECHO v 1.61
+# Code description: Contains all the funcitons for extended harmonic oscillator work, in order to have less confusion between scripts.
 
 # function to represent damped oscillator with phase and equilibrium shift formula
 # inputs:
@@ -654,7 +654,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     a0 <- max(y_val,na.rm = TRUE) - y0 # mean(y_val) # initial guess for amplitude
     
     # intial value for gamma
-    if (which.max(peaks)==0){ # if there are no peaks, we account for that
+    if (length(peaks)==0){ # if there are no peaks, we account for that
       gam0 <- 0
     } else if (which.max(peaks)==1){ # if the highest peak is first, then damping is likely
       if (length(peaks)>1){

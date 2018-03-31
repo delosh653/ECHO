@@ -180,7 +180,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.6")
+                              tags$p("ECHO Version 1.61")
                               ))
                               )),
                  
@@ -252,14 +252,14 @@ ui <- fluidPage(
         selectInput("coeff","Choose Coefficient to View (for PDG)",c("Forcing.Coefficient","Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted", "Equilibrium Value", "Tau", "P-Value", "BH Adj P-Value", "BY Adj P-Value")),
         
         div(style="display: inline-block;",
-            selectInput("subset_look","Subset of Data to View (for PDG and Gene Lists)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Repressed","Overexpressed","Nonconverged","Nonstarter","No Deviation","Both","Theirs","Ours","Diff"))),
+            selectInput("subset_look","Subset of Data to View (for PDG and Gene Lists)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Repressed","Overexpressed","Nonconverged","Nonstarter","No Deviation","Both ECHO and JTK","Only JTK","Only ECHO","Neither ECHO and JTK"))),
         
         div(style="display: inline-block; vertical-align:top;  width: 20px;",
             actionButton("subset_help", icon("question", lib="font-awesome"))),
         uiOutput("Help_subset"),
         
         div(style="display: inline-block;",
-            selectInput("heat_subset_look","Subset of Data to View (for Heat Maps)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Repressed","Overexpressed","Both","Theirs","Ours","Diff"))),
+            selectInput("heat_subset_look","Subset of Data to View (for Heat Maps)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Repressed","Overexpressed","Both ECHO and JTK","Only JTK","Only ECHO","Neither ECHO and JTK"))),
         div(style="display: inline-block; vertical-align:top;  width: 20px;",
             actionButton("heat_subset_help", icon("question", lib="font-awesome"))),
         uiOutput("Help_heat_subset"),
@@ -271,7 +271,8 @@ ui <- fluidPage(
         uiOutput("Help_heat_subset_rep"),
         
         # action buttons for visualization and downloading results
-        actionButton("go","Visualize!"),
+        actionButton("go","Update"),
+        hr(),
         downloadButton('downloadData', 'Download Gene List'),
         downloadButton('downloadPlot', 'Download Plot')
       ),
@@ -285,7 +286,7 @@ ui <- fluidPage(
                    tags$div(class="header", checked = NA,
                             list(
                               tags$p("Once you have run your data, you can visualize and explore your results using the .RData
-                                     file available for download after your run. (Note that .PNG download is not available for Venn Diagrams and Heat Maps, but screenshotting tools will work well.) There are five types of visualizations/
+                                     file available for download after your run. (Note that .PNG download is not available for Venn Diagrams and Heat Maps, but screenshotting tools will work well.) To update visualizations or gene lists, select options from each of the drop down menus to the left and press Update. There are five types of visualizations/
                                      explorations currently available:"),
                               HTML('<center>'),tags$b("Gene Lists:"),HTML('</center>'),
                               tags$p("A subset of ECHO parameter results for exploration, which can be sorted by any parameter.These subsets are specified by the P-Value Type, P-Value Cutoff, and
@@ -396,7 +397,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_subset=renderUI({
       if(input$subset_help%%2){ # forcing coefficient help
-        helpText("Identifies which subset of data to view for specified visualizations. For more information regarding what terms such as 'Both' and 'Theirs' mean, please view Venn Diagram summary. Note 1: Forcing coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
+        helpText("Identifies which subset of data to view for specified visualizations. For more information regarding what terms such as 'Both ECHO and JTK' and 'Only JTK' mean, please view Venn Diagram summary. Note 1: Forcing coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
       }
       else{
         return()
@@ -412,7 +413,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_heat_subset=renderUI({
       if(input$heat_subset_help%%2){ # forcing coefficient help
-        helpText("Identifies which subset of data to view for heat map visualizations. For more information regarding what terms such as 'Both' and 'Theirs' mean, please view Venn Diagram summary. Note 1: Forcing coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
+        helpText("Identifies which subset of data to view for heat map visualizations. For more information regarding what terms such as 'Both ECHO and JTK' and 'Only JTK' mean, please view Venn Diagram summary. Note 1: Forcing coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
       }
       else{
         return()
@@ -859,7 +860,7 @@ server <- function(input,output){ # aka the code behind the results
     
     # gene list output based on specified subset
     { 
-      if (!is_jtk && (input$subset_look == "JTK" || input$subset_look == "Both" || input$subset_look == "Theirs" || input$subset_look == "Ours" || input$subset_look == "Diff")){
+      if (!is_jtk && (input$subset_look == "JTK" || input$subset_look == "Both ECHO and JTK" || input$subset_look == "Only JTK" || input$subset_look == "Only ECHO" || input$subset_look == "Neither ECHO and JTK")){
         df<- data.frame()
       }
       else if(input$subset_look == "None"){
@@ -941,28 +942,28 @@ server <- function(input,output){ # aka the code behind the results
           df<-as.data.frame(total_results[nodev,1:15])
         }
       }
-      else if(input$subset_look == "Both"){
+      else if(input$subset_look == "Both ECHO and JTK"){
         if(is_jtk){
           df<-as.data.frame(cbind(total_results[both,1:15],JTK_results[both,2:4]))
         } else {
           df<-as.data.frame(total_results[both,1:15])
         }
       }
-      else if(input$subset_look == "Theirs"){
+      else if(input$subset_look == "Only JTK"){
         if(is_jtk){
           df<-as.data.frame(cbind(total_results[theirs,1:15],JTK_results[theirs,2:4]))
         } else {
           df<-as.data.frame(total_results[theirs,1:15])
         }
       }
-      else if(input$subset_look == "Ours"){
+      else if(input$subset_look == "Only ECHO"){
         if(is_jtk){
           df<-as.data.frame(cbind(total_results[ours,1:15],JTK_results[ours,2:4]))
         } else {
           df<-as.data.frame(total_results[ours,1:15])
         }
       }
-      else if(input$subset_look == "Diff"){
+      else if(input$subset_look == "Neither ECHO and JTK"){
         if(is_jtk){
           df<-as.data.frame(cbind(total_results[diff,1:15],JTK_results[diff,2:4]))
         } else {
@@ -988,7 +989,7 @@ server <- function(input,output){ # aka the code behind the results
         rep_genes <- total_results[total_results$'Gene Name'==input$gene_name,16:(15+(length(timen)*num_reps))]
         
         ribbon.df <- data.frame(matrix(ncol = 4+num_reps, nrow = length(timen)))
-        colnames(ribbon.df) <- c("Times","Fit","Min","Max", paste(rep("Rep",num_reps),c(1:3), sep=".")) # assigning column names
+        colnames(ribbon.df) <- c("Times","Fit","Min","Max", paste(rep("Rep",num_reps),c(1:num_reps), sep=".")) # assigning column names
         ribbon.df$Times <- timen
         ribbon.df$Fit <- t(total_results[total_results$'Gene Name'==input$gene_name,c((16+(length(timen)*num_reps)):ncol(total_results))]) # assigning the fit
         ribbon.df$Min <- sapply(seq(1,ncol(rep_genes), by = num_reps), function(x) min(unlist(rep_genes[,c(x:(num_reps-1+x))]), na.rm = TRUE)) # getting min values of replicates
@@ -1015,7 +1016,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Iterations:",total_results$Iterations[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Forcing Coefficient:", total_results$Forcing.Coefficient[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Oscillation Type:",total_results$`Oscillation Type`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Amplitude", total_results$Amplidtude[total_results$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Amplitude", total_results$Amplitude[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Radian.Frequency:",total_results$Radian.Frequency[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Period:",total_results$Period[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Phase Shift:",total_results$`Phase Shift`[total_results$`Gene Name`==input$gene_name],"\n"))
@@ -1076,7 +1077,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Iterations:",total_results$Iterations[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Forcing Coefficient:", total_results$Forcing.Coefficient[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Oscillation Type:",total_results$`Oscillation Type`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Amplitude", total_results$Amplidtude[total_results$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Amplitude", total_results$Amplitude[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Radian.Frequency:",total_results$Radian.Frequency[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Period:",total_results$Period[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Phase Shift:",total_results$`Phase Shift`[total_results$`Gene Name`==input$gene_name],"\n"))
@@ -1121,7 +1122,7 @@ server <- function(input,output){ # aka the code behind the results
         # the summary is a 5-number summary of the coefficient
         
         # you can't have JTK and look at JTK_specific subsets
-        if (!is_jtk && (input$subset_look == "JTK" || input$subset_look == "Both" || input$subset_look == "Theirs" || input$subset_look == "Ours" || input$subset_look == "Diff")){
+        if (!is_jtk && (input$subset_look == "JTK" || input$subset_look == "Both ECHO and JTK" || input$subset_look == "Only JTK" || input$subset_look == "Only ECHO" || input$subset_look == "Neither ECHO and JTK")){
           output$text <- renderPrint({
             "N/A"
           })
@@ -1246,7 +1247,7 @@ server <- function(input,output){ # aka the code behind the results
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
           
         }
-        else if(input$subset_look == "Both"){
+        else if(input$subset_look == "Both ECHO and JTK"){
           output$text <- renderPrint({
             summary(total_results[both,input$coeff])
           })
@@ -1256,7 +1257,7 @@ server <- function(input,output){ # aka the code behind the results
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
         }
-        else if(input$subset_look == "Theirs"){
+        else if(input$subset_look == "Only JTK"){
           output$text <- renderPrint({
             summary(total_results[theirs,input$coeff])
           })
@@ -1266,7 +1267,7 @@ server <- function(input,output){ # aka the code behind the results
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
         }
-        else if(input$subset_look == "Ours"){
+        else if(input$subset_look == "Only ECHO"){
           output$text <- renderPrint({
             summary(total_results[ours,input$coeff])
           })
@@ -1276,7 +1277,7 @@ server <- function(input,output){ # aka the code behind the results
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
         }
-        else if(input$subset_look == "Diff"){
+        else if(input$subset_look == "Neither ECHO and JTK"){
           output$text <- renderPrint({
             summary(total_results[diff,input$coeff])
           })
@@ -1341,14 +1342,14 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("  Repressed:", sum(repressed & circ_us,na.rm=TRUE),"\n"))
           cat(paste("Circadian (JTK_CYCLE):", sum(circ_jtk),"\n"))
           cat("Confusion Matrix of Circadian Genes
-              JTK_CYCLE
-              yes     no
-              ECHO yes both    ours
-              no  theirs  diff\n")
-          cat(paste("Both:",sum(both,na.rm=TRUE),"\n"))
-          cat(paste("Theirs:",sum(theirs,na.rm=TRUE),"\n"))
-          cat(paste("Ours:",sum(ours,na.rm=TRUE),"\n"))
-          cat(paste("Diff:",sum(diff,na.rm=TRUE),"\n"))
+                                JTK_CYCLE
+                       yes                  no
+              ECHO yes Both ECHO and JTK    Only ECHO
+                   no  Only JTK             Neither ECHO nor JTK\n")
+          cat(paste("Both ECHO and JTK:",sum(both,na.rm=TRUE),"\n"))
+          cat(paste("Only JTK:",sum(theirs,na.rm=TRUE),"\n"))
+          cat(paste("Only ECHO:",sum(ours,na.rm=TRUE),"\n"))
+          cat(paste("Neither ECHO nor JTK:",sum(diff,na.rm=TRUE),"\n"))
           
           # also put user inputs
           cat("\n")
@@ -1381,7 +1382,7 @@ server <- function(input,output){ # aka the code behind the results
       
       start.time <- Sys.time() # begin counting time
       
-      if (!is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff" || input$heat_subset_rep != "all" && is.na(as.numeric(input$heat_subset_rep)) || (input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) > num_reps) || input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) <= 0)){
+      if (!is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both ECHO and JTK" || input$heat_subset_look == "Only JTK" || input$heat_subset_look == "Only ECHO" || input$heat_subset_look == "Neither ECHO and JTK" || input$heat_subset_rep != "all" && is.na(as.numeric(input$heat_subset_rep)) || (input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) > num_reps) || input$heat_subset_rep != "all" && as.numeric(input$heat_subset_rep) <= 0)){
         output$text <- renderPrint({
           "N/A"
         })
@@ -1427,20 +1428,20 @@ server <- function(input,output){ # aka the code behind the results
         total_results_na <-  total_results[repressed,]; 
         total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
       }
-      else if(input$heat_subset_look == "Both"){
+      else if(input$heat_subset_look == "Both ECHO and JTK"){
         # filter out the rows where the paremeters are NA and our characteristic
         total_results_na <-  total_results[both,]; 
         total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
       }
-      else if(input$heat_subset_look == "Theirs"){
+      else if(input$heat_subset_look == "Only JTK"){
         total_results_na <-  total_results[theirs,]; # filter out the rows where the paremeters are NA
       }
-      else if(input$heat_subset_look == "Ours"){
+      else if(input$heat_subset_look == "Only ECHO"){
         # filter out the rows where the paremeters are NA and our characteristic
         total_results_na <-  total_results[ours,]; 
         total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
       }
-      else if(input$heat_subset_look == "Diff"){
+      else if(input$heat_subset_look == "Neither ECHO and JTK"){
         # filter out the rows where the paremeters are NA and our characteristic
         total_results_na <-  total_results[diff,]; 
         total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
@@ -1448,9 +1449,9 @@ server <- function(input,output){ # aka the code behind the results
       #total_results_na <-  total_results[!is.na(total_results$Amplitude),]; # filter out the rows where the paremeters are NA
       
       # don't let it output if jtk requested without JTK_results
-      if (!(!is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both" || input$heat_subset_look == "Theirs" || input$heat_subset_look == "Ours" || input$heat_subset_look == "Diff"))){
+      if (!(!is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both ECHO and JTK" || input$heat_subset_look == "Only JTK" || input$heat_subset_look == "Only ECHO" || input$heat_subset_look == "Neither ECHO and JTK"))){
         
-        if (input$heat_subset_look != "JTK_CYCLE" & input$heat_subset_look != "Theirs"){
+        if (input$heat_subset_look != "JTK_CYCLE" & input$heat_subset_look != "Only JTK"){
           phase <- total_results_na$`Phase Shift`
           amp <- total_results_na$Amplitude
           
