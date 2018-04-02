@@ -10,7 +10,7 @@ Note: currently in beta testing.
 
 ECHO (Extended Circadian Harmonic Oscillators) is an R-powered application designed to find and visualize circadian rhythms from your data using extended harmonic oscillators. To read more about our inital work on this project and cite us, see [*Circadian Rhythms in Neurospora Exhibit Biologically Relevant Driven and Damped Harmonic Oscillations*](https://dl.acm.org/citation.cfm?id=3107420&CFID=1006798692&CFTOKEN=88816139) by H. De los Santos et al. (2017) We also can also run another common circadian rhythm detection system, JTK_CYCLE. If you use their detection system, please cite them: [*JTK_CYCLE: an efficient non-parametric algorithm for detecting rhythmic components in genome-scale datasets*](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3119870/) by  ME Hughes et al. (2011)
 
-All images created by ECHO using data from [*Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential*](https://www.ncbi.nlm.nih.gov/pubmed/25362047) by Hurley, J. et al. (2014)
+All images created by ECHO using data from [*Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential*](https://www.ncbi.nlm.nih.gov/pubmed/25362047) by J. Hurley, et al. (2014)
 
 ## Use and First-Time Set-Up Instructions
 
