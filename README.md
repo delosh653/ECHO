@@ -1,24 +1,29 @@
 # Welcome to ECHO!
 
+<p align="center">
+<img src="ECHO Shiny App/www/wc1_Neurospora_Replicates_Unsmoothed.PNG" width="500" />
+</p>
+
+## Overview
+
 Note: currently in beta testing.
 
-ECHO (Extended Circadian Harmonic Oscillations) is an R-powered application designed to find and identify circadian rhythms from your data using extended harmonic oscillators. To read more about our inital work on this project, see here (https://dl.acm.org/citation.cfm?id=3107420&CFID=1006798692&CFTOKEN=88816139): Hannah De los Santos, Emily J. Collins, Jennifer M. Hurley, and Kristin P. Bennett. 2017. Circadian Rhythms in Neurospora Exhibit Biologically Relevant Driven and Damped Harmonic Oscillations. In Proceedings of the 8th ACM International Conference on Bioinformatics, Computational Biology,and Health Informatics (ACM-BCB '17). ACM, New York, NY, USA, 455-463. DOI: https://doi.org/10.1145/3107411.3107420 
+ECHO (Extended Circadian Harmonic Oscillators) is an R-powered application designed to find and visualize circadian rhythms from your data using extended harmonic oscillators. To read more about our inital work on this project and cite us, see [*Circadian Rhythms in Neurospora Exhibit Biologically Relevant Driven and Damped Harmonic Oscillations*](https://dl.acm.org/citation.cfm?id=3107420&CFID=1006798692&CFTOKEN=88816139) by H. De los Santos et al. (2017) We also can also run another common circadian rhythm detection system, JTK_CYCLE. If you use their detection system, please cite them: [*JTK_CYCLE: an efficient non-parametric algorithm for detecting rhythmic components in genome-scale datasets*](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3119870/) by  ME Hughes et al. (2011)
 
-We also can also run another common circadian rhythm detection system, JTK_CYCLE. If you use their detection system, please cite them here (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3119870/): Hughes ME, Hogenesch JB, Kornacker K. JTK_CYCLE: an efficient non-parametric algorithm for detecting rhythmic components in genome-scale datasets. Journal of biological rhythms. 2010;25(5):372-380. doi:10.1177/0748730410379711.
+All images created by ECHO using data from [*Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential*](https://www.ncbi.nlm.nih.gov/pubmed/25362047) by Hurley, J. et al. (2014)
 
-# Use and First-Time Set-Up Instructions
+## Use and First-Time Set-Up Instructions
 
-Thank you for downloading ECHO (Extended Circadian Harmonic Oscillations)! ECHO is is an app designed to find and identify circadian rhythms from your data, then visualize the results. This guide will lead you in first time set-up and use. Pictures have been provided for ease of use, using Windows 7, in the files ECHO README.docx and ECHO_README.pdf, found above. A double asterisk indicates the step has an explanation below, and a tilde indicates the step is first-time set up only.
-
-Last updated: 11/17/17 (ECHO version 0.3)
+Thank you for downloading ECHO! ECHO is is an app designed to find and identify circadian rhythms from your data, then visualize the results. This guide will lead you in first time set-up and use. Pictures have been provided for ease of use, using Windows 7, in the files ECHO README.docx and ECHO_README.pdf, found above. A double asterisk indicates the step has an explanation below, and a tilde indicates the step is first-time set up only.
 
 Steps: 
-1.	** ~ Download Firefox (https://www.mozilla.org/en-US/firefox/new/) or Chrome (https://www.google.com/chrome/browser/desktop/index.html) and make it your default browser.
-2.	~ Download R, if you do not already have it: https://www.r-project.org/
-3.	~ Download RStudio, if you do not already have it (RStudio Desktop is sufficient): https://www.rstudio.com/products/rstudio/download/
+1.	** ~ Download [Firefox](https://www.mozilla.org/en-US/firefox/new/) or [Chrome](https://www.google.com/chrome/browser/desktop/index.html) and make it your default browser.
+2.	~ [Download R](https://www.r-project.org/), if you do not already have it. 
+3.	~ [Download RStudio](https://www.rstudio.com/products/rstudio/download/), if you do not already have it (RStudio Desktop is sufficient).
 4.	Open RStudio.
 5.	~ Copy and paste the following text into the console window (bottom right window of the RStudio Session), then press enter:
 
+```r
 install.packages("rstudioapi")
 install.packages("shiny")
 install.packages("ggplot2")
@@ -31,10 +36,11 @@ install.packages("iterators")
 install.packages("doSNOW")
 install.packages("colorRamps")
 install.packages("fields")
+```
 
 This will install these packages (a set of functions that this application uses) onto your computer. This may ask for your input, so just say yes to the questions asked. If you run into errors saying “yes,” just say no instead. Note: this may take some time.
 
-6.	Open app.R, which should be included in the .zip file you downloaded and also contained this README. It should open in the top left window of your RStudio session.
+6.	Open app.R, which should be included in the .zip file you downloaded and also contained README.pdf and README.docx. It should open in the top left window of your RStudio session.
 
 7.	In the top right corner of the app.R window, you should see the button, “Run App”. Click on the small downwards arrow next to it and choose “Run External”. 
 
@@ -44,18 +50,90 @@ This will install these packages (a set of functions that this application uses)
 
 ** Why do I have to install either Firefox or Chrome, you ask? Why not Internet Explorer, or some other browser? Well, it is known there are problems downloading files when viewing shiny apps in Internet Explorer, so we definitely want to avoid that. However, I have not tested this app in browsers like Microsoft Edge, Safari, etc. If you can verify that these work, please let me know at delosh@rpi.edu.
 
-# Contact Information and Bug Reporting
+## ECHO Features
+
+ECHO's interface is divided into two sections: **Finding Rhythms** and **Visualizing Results**.
+
+Within the **Finding Rhythms** tab, you can upload your data (.csv) and enter its information, such as time point range, resolution (in hours), and amount and type of replicates. You can then choose from a variety of preprocessing steps including smoothing, removing unexpressed genes, and removing linear baselines. As mentioned above, you can also choose to run JTK_CYCLE from this tab. You can then download your results as both a .csv (for viewing) and a .RData (for visualizations).
+
+In the **Visualizing Results** tab, simply upload the .RData file from your results and choose from several visualization and gene subset exploration options. You can explore subsets of data under the "Gene List" tab and sort by the various output parameters, such as Period or P-Value. You can also choose from a host of automatically-generated visualizations, including Venn diagrams, heat maps, gene expression plots (with or without replicates visualized), and parameter density graphs (examples displayed below).
+
+<p align="center">
+<img src="ECHO Shiny App/www/venn_diagram_by_adj_include_overdamped_Neurospora_Replicates_Unsmoothed.PNG" width="200" /> <img src="ECHO Shiny App/www/heat_map_Neurospora_Replicates_Smoothed_ECHO.PNG" width="200" /> <img src="ECHO Shiny App/www/wc1_Neurospora_Replicates_Unsmoothed.PNG" width="300" /> <img src="ECHO Shiny App/www/wc1_gene_expression_wo_rep_Neurospora_Replicates_Unsmoothed.PNG" width="300" /> <img src="ECHO Shiny App/www/forcing_coefficient_density_Neurospora_Replicates_Smoothed_ECHO.PNG" width="300" />
+</p>
+
+## Contact Information and Bug Reporting
 
 As you may have noticed, this is still in beta testing! Therefore, we would love to hear your feedback on the program. For general feedback, email delosh@rpi.edu with the subject line "ECHO Feedback".
 
-If you run into any errors, please email delosh@rpi.edu with the following (subject line: ECHO Error): 
+If you run into any errors, please email delosh@rpi.edu with the following (subject line: "ECHO Error"): 
 - a short desciption of your problem
 - ECHO version number 
-- your dataset/file(s) 
+- your dataset/file(s) (this may be a sample of at least 50% of the data)
 - your exact settings for the run (a screenshot will do) 
-- your exact error from the console window (a screenshot will do) 
+- your exact error from the console window (a screenshot will do)
+
+However, please read the FAQ below before sending error reports.
 
 Contact:
 Hannah De los Santos /
 email: delosh@rpi.edu /
 Rensselaer Polytechnic Institute
+
+## FAQ
+
+**Q:** My dataset isn't working for some reason and I'm not using the latest ECHO version! Why?
+
+**A:** Please update to the current ECHO version (you can see this at the top of the github repository by checking out what the latest commit was), since this may have been corrected in an update. If this problem persists, feel free to send another email!
+
+---
+
+**Q:** I get the following warnings and errors when I try to visualize my results using the .RData file:
+```r
+Warning in circ_us & circ_jtk:
+  longer object length is not a multiple of shorter object length
+...
+Warning: Error in data.frame: arguments imply differing number of rows
+```
+**A:** Double check that you do not have any duplicate gene names in your dataset. If you do, differentiate these names somehow. JTK_CYCLE automatically removes duplicate names while ECHO doesn't, leading to this error.
+
+---
+
+**Q:** I get the following error when I try to run my dataset using ECHO:
+```r
+Warning: Error in {: task 3 failed - "missing value where TRUE/FALSE needed"
+```
+**A:** Check your data csv to make sure that your first row is data labels, your first column is only character strings (such as "ABCD"), and your numerical data only contains numbers and blank spaces. In R, there is a simple way to check this (enter the following code in your console window):
+```r
+install.packages("readr") # if you already have downloaded this package, put a # before install
+library(readr)
+genes <- read_csv("YOUR FILE EXTENSION HERE (place between quotes, must use forward slashes)")
+```
+Here is an example of a file extension: "C:/Users/delosh/Documents/example.csv" . 
+If your data is correctly structured, you should see the following (replace "Gene Symbol" with whatever your gene name column is titled):
+```r
+Parsed with column specification:
+cols(
+  .default = col_double(),
+  `Gene Symbol` = col_character()
+)
+See spec(...) for full column specifications.
+```
+If you have problems in your data (in this error case, nonnumerical data in your numerical data), you will get the following error (or similar):
+```r
+Parsed with column specification:
+cols(
+  .default = col_double(),
+  `Gene Symbol` = col_character()
+)
+See spec(...) for full column specifications.
+Warning: 72 parsing failures.
+ row  col expected  actual
+1250 16.1 a double #DIV/0!
+1250 16.2 a double #DIV/0!
+1250 18.1 a double #DIV/0!
+.... .... ........ .......
+See problems(...) for more details.
+```
+In this case, nonnumerical data was intermixed with numerical data (#DIV/0! was where a number or a blank cell should have been). This user would have to go back and change these to the appropriate number or blank space.
+
