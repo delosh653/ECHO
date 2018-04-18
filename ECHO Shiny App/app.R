@@ -180,7 +180,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.61")
+                              tags$p("ECHO Version 1.62")
                               ))
                               )),
                  
@@ -274,7 +274,7 @@ ui <- fluidPage(
         actionButton("go","Update"),
         hr(),
         downloadButton('downloadData', 'Download Gene List'),
-        downloadButton('downloadPlot', 'Download Plot')
+        downloadButton('downloadPlot', 'Download Plot *')
       ),
       # where the output happens
       mainPanel(
@@ -286,7 +286,7 @@ ui <- fluidPage(
                    tags$div(class="header", checked = NA,
                             list(
                               tags$p("Once you have run your data, you can visualize and explore your results using the .RData
-                                     file available for download after your run. (Note that .PNG download is not available for Venn Diagrams and Heat Maps, but screenshotting tools will work well.) To update visualizations or gene lists, select options from each of the drop down menus to the left and press Update. There are five types of visualizations/
+                                     file available for download after your run. (*: Note that .PNG download is not available for Venn Diagrams and Heat Maps, but right-click copy and paste works well.) To update visualizations or gene lists, select options from each of the drop down menus to the left and press Update. There are five types of visualizations/
                                      explorations currently available:"),
                               HTML('<center>'),tags$b("Gene Lists:"),HTML('</center>'),
                               tags$p("A subset of ECHO parameter results for exploration, which can be sorted by any parameter.These subsets are specified by the P-Value Type, P-Value Cutoff, and
@@ -602,7 +602,7 @@ server <- function(input,output){ # aka the code behind the results
           total_results <- total_results[-nrow(total_results),]
         }
         
-        adjusted_p_val_us <- adjust_p_values(total_results$`P-Value`) # benjamini-hochberg adjust p-values
+        adjusted_p_val_us <- p.adjust(unlist(total_results$`P-Value`), method = "BH") # benjamini-hochberg adjust p-values
         total_results <- cbind(total_results[,c(1:13)],`BH Adj P-Value` = adjusted_p_val_us, total_results[,c(14:ncol(total_results))]) # assign to data frame
         
         # adding the benjamini-hochberg-yekutieli p-value adjustment
