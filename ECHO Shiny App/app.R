@@ -180,7 +180,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.62")
+                              tags$p("ECHO Version 1.7")
                               ))
                               )),
                  
@@ -198,7 +198,7 @@ ui <- fluidPage(
                                      ("- Radian.Frequency*: Parameter describing frequency of oscillations, in radians."),tags$br(),
                                      ("- Period*: States the time for one complete oscillation, assumed to be in hours."),tags$br(),
                                      ("- Phase Shift*: Parameter describing the amount the oscillator is shifted, in radians."),tags$br(),
-                                     ("- Hours Shifted: Desribes the amount the oscillator is shifted in hours, calculated from phase shift and fitted period."),tags$br(),
+                                     ("- Hours Shifted: Desribes the amount the oscillator is shifted in hours, calculated from phase shift and fitted period. This is the time of the first peak of the oscillation, relative to starting time."),tags$br(),
                                      ("- Equilibrium Value*: Parameter describing the center of the oscillator, i.e. the line the expression oscillates around."),tags$br(),
                                      ("- Tau*: Calculated to determine p-values using Kendall's Tau."),tags$br(),
                                      ("- P-Value*: Significance of ECHO fit, unadjusted."),tags$br(),
@@ -549,17 +549,22 @@ server <- function(input,output){ # aka the code behind the results
         if (input$low ==""){ # empty low input, adjust to time series
           if (resol >= 1){
             low <- 2*pi/resol
+            low_end <- resol
           }
           else{ # if the begining is >=0, smallest period available is 1
             low <- 2*pi/1
+            low_end <- 1
           }
         } else{ # there is a low input
           low <- 2*pi/as.numeric(input$low)
+          low_end <- as.numeric(input$low)
         }
         if (input$high ==""){ # empty high input, adjust to time series
           high <- 2*pi/(resol*length(timen))
+          high_end <- (resol*length(timen))
         } else{ # there is a high input
           high <- 2*pi/as.numeric(input$high)
+          high_end <- as.numeric(input$high)
         }
         
         start.time <- Sys.time() # begin counting time
@@ -619,6 +624,8 @@ server <- function(input,output){ # aka the code behind the results
         num_reps <<- num_reps
         low <<- low
         high <<- high
+        low_end <<- low_end
+        high_end <<- high_end
         
         print(paste("Ended on:",Sys.time())) # show ending time in console window
         
@@ -632,7 +639,8 @@ server <- function(input,output){ # aka the code behind the results
                             "rem_unexpr_amt"=rem_unexpr_amt,
                             "is_normal"=input$is_normal,
                             "is_de_linear_trend"=input$is_de_linear_trend,
-                            "run_jtk"=input$run_jtk)
+                            "run_jtk"=input$run_jtk,
+                            "v_num"=1.7) # VERSION NUMBER
         
         # jtk run -----
         
@@ -797,8 +805,8 @@ server <- function(input,output){ # aka the code behind the results
     # call upon user input
     is_jtk <- user_input$run_jtk
     
-    low_end <- 2*pi/low
-    high_end <- 2*pi/high
+    #low_end <- floor(2*pi/low)
+    #high_end <- ceiling(2*pi/high)
     
     circ_us <- (total_results$Period<=high_end & total_results$Period >=low_end & total_results[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
     circ_us[is.na(circ_us)] <- FALSE # na's are false
@@ -1325,6 +1333,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
           cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
           cat(paste("Run JTK?: ",user_input$run_jtk,"\n"))
+          cat(paste("ECHO Version No.: ",user_input$v_num,"\n"))
         })
         plot_viz <- renderPlot({plot_viz <- ggplot()}) # no venn diagram
       }
@@ -1368,6 +1377,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
           cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
           cat(paste("Run JTK?: ",user_input$run_jtk,"\n"))
+          cat(paste("ECHO Version No.: ",user_input$v_num,"\n"))
         })
         
         output$plot_viz <- renderPlot({

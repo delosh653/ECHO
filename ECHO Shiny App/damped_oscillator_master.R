@@ -1,6 +1,6 @@
 # Extended Oscillations Function Source
 # By Hannah De los Santos
-# ECHO v 1.62
+# ECHO v 1.7
 # Code description: Contains all the funcitons for extended harmonic oscillator work, in order to have less confusion between scripts.
 
 # function to represent damped oscillator with phase and equilibrium shift formula
@@ -771,9 +771,12 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
       type_gam <- "Repressed"
     }
 
-    # calculating the phase shift in terms of period
+    # calculating the phase shift in terms of period (omega inverse of period)
     frac_part <- (phi/(2*pi)) - trunc(phi/(2*pi))
     phase_hours <- frac_part*(2*pi/omega)
+    if (phase_hours < 0){ # only output positive shifts
+      phase_hours <- phase_hours + (2*pi/omega)
+    }
 
     # calculate p-value
     ref_wave <- (alt_form(a,gam,omega,phi,y_shift,times)) # fitted values
