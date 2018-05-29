@@ -4,6 +4,15 @@
 <img src="ECHO Shiny App/www/wc1_Neurospora_Replicates_Unsmoothed.PNG" width="500" />
 </p>
 
+## README Outline
+
+* Overview
+* Use and First-Time Set-Up Instructions
+* ECHO Features
+* ECHO R Package
+* Contact Information and Bug Reporting
+* FAQ
+
 ## Overview
 
 Note: currently in beta testing. Since this app is currently in development, please check here for updates, especially for an updated ECHO citation.
@@ -61,6 +70,19 @@ In the **Visualizing Results** tab, simply upload the .RData file from your resu
 <p align="center">
 <img src="ECHO Shiny App/www/venn_diagram_by_adj_include_overdamped_Neurospora_Replicates_Unsmoothed.PNG" width="200" /> <img src="ECHO Shiny App/www/heat_map_Neurospora_Replicates_Smoothed_ECHO.PNG" width="200" /> <img src="ECHO Shiny App/www/wc1_Neurospora_Replicates_Unsmoothed.PNG" width="300" /> <img src="ECHO Shiny App/www/wc1_gene_expression_wo_rep_Neurospora_Replicates_Unsmoothed.PNG" width="300" /> <img src="ECHO Shiny App/www/forcing_coefficient_density_Neurospora_Replicates_Smoothed_ECHO.PNG" width="300" />
 </p>
+
+## ECHO R Package
+
+ECHO's methodology is now available as an R package on CRAN! To download and use ECHO as a package, enter the following in the R console:
+
+```r
+install.packages("echo.find")
+library(echo.find)
+```
+
+With this, you then have access to finding rhythms in data with one function, echo_find(). For more information on how to use this package and its functionality, check out the [echo.find vignette](https://cran.r-project.org/web/packages/echo.find/vignettes/echo-vignette.html).
+
+Note that using this package requires knowledge of coding in R. If you having no coding knowledge, we recommend that you download and use the app as directed above. Also note that this version of ECHO does not take advantage of parallelism that the ECHO app does and therefore takes longer to run (only using one core, rather than using all cores except one). Further, there is no console output to show a progress bar of how long the output will take. If you would prefer built in parallelism and a progress bar, we highly recommend that you use the app. However, we have thought of several workarounds -- if interested, feel free to contact us with the "Feedback" form below.
 
 ## Contact Information and Bug Reporting
 
