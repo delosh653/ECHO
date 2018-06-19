@@ -1,6 +1,6 @@
 # Extended Oscillations Function Source
 # By Hannah De los Santos
-# ECHO v 1.8
+# ECHO v 1.81
 # Code description: Contains all the funcitons for extended harmonic oscillator work, in order to have less confusion between scripts.
 
 # function to represent damped oscillator with phase and equilibrium shift formula
@@ -777,7 +777,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
       dist_peak <- frac_part*(2*pi/omega) # distance from first peak
       phase_hours <- (2*pi/omega)-dist_peak
     } else { # shift to the right
-      frac_part <- (phi/(2*pi)) + trunc(phi/(2*pi))
+      frac_part <- (phi/(2*pi)) - trunc(phi/(2*pi))
       dist_peak <- frac_part*(2*pi/omega) # distance from first peak
       phase_hours <- (2*pi/omega)+abs(dist_peak)
     }
