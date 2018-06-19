@@ -180,7 +180,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.81")
+                              tags$p("ECHO Version 1.82")
                               ))
                               )),
                  
@@ -640,7 +640,7 @@ server <- function(input,output){ # aka the code behind the results
                             "is_normal"=input$is_normal,
                             "is_de_linear_trend"=input$is_de_linear_trend,
                             "run_jtk"=input$run_jtk,
-                            "v_num"=1.81) # VERSION NUMBER
+                            "v_num"=1.82) # VERSION NUMBER
         
         # jtk run -----
         

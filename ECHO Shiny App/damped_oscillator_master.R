@@ -779,7 +779,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     } else { # shift to the right
       frac_part <- (phi/(2*pi)) - trunc(phi/(2*pi))
       dist_peak <- frac_part*(2*pi/omega) # distance from first peak
-      phase_hours <- (2*pi/omega)+abs(dist_peak)
+      phase_hours <- abs(dist_peak)
     }
     # should be no negative shifts
     # if (phase_hours < 0){ # only output positive shifts
