@@ -180,7 +180,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.71")
+                              tags$p("ECHO Version 1.8")
                               ))
                               )),
                  
@@ -640,7 +640,7 @@ server <- function(input,output){ # aka the code behind the results
                             "is_normal"=input$is_normal,
                             "is_de_linear_trend"=input$is_de_linear_trend,
                             "run_jtk"=input$run_jtk,
-                            "v_num"=1.71) # VERSION NUMBER
+                            "v_num"=1.8) # VERSION NUMBER
         
         # jtk run -----
         
@@ -1024,7 +1024,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Iterations:",total_results$Iterations[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Forcing Coefficient:", total_results$Forcing.Coefficient[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Oscillation Type:",total_results$`Oscillation Type`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Amplitude", total_results$Amplitude[total_results$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Amplitude:", total_results$Amplitude[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Radian.Frequency:",total_results$Radian.Frequency[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Period:",total_results$Period[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Phase Shift:",total_results$`Phase Shift`[total_results$`Gene Name`==input$gene_name],"\n"))
@@ -1085,7 +1085,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Iterations:",total_results$Iterations[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Forcing Coefficient:", total_results$Forcing.Coefficient[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Oscillation Type:",total_results$`Oscillation Type`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Amplitude", total_results$Amplitude[total_results$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Amplitude:", total_results$Amplitude[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Radian.Frequency:",total_results$Radian.Frequency[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Period:",total_results$Period[total_results$`Gene Name`==input$gene_name],"\n"))
           cat(paste("Phase Shift:",total_results$`Phase Shift`[total_results$`Gene Name`==input$gene_name],"\n"))
