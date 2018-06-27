@@ -110,6 +110,27 @@ Rensselaer Polytechnic Institute
 
 ---
 
+**Q:** My data has starting points/ending points/resolution of less than an hour, or a fractional amount of hours! How do I run this through ECHO?
+
+**A:** If you have resolution of less than an hour, please enter the fraction into the box, in the form: numerator/denominator. For example, if my resolution was every 10 minutes (or 6 times every hour), I would enter: 1/6. This fractional form extends to starting and ending points as well. You must enter the fraction, NOT a mixed number. For example, if my starting time was 16 hours, 10 minutes, my starting time would be: 97/6. (This stems from the following calculation: (1/6 x 16) + (1/6))
+
+---
+
+**Q:** I get the following warning and errors when I try to run my data through ECHO:
+
+```r
+Warning in read.table(file = file, header = header, sep = sep, quote = quote,  :
+  incomplete final line found by readTableHeader on '....csv'
+
+Warning: Error in +: non-conformable arrays
+  76: avg_all_rep [damped_oscillator_master.R#157]
+  72: observeEventHandler [/Users/allenc/Desktop/ECHO-master/ECHO Shiny App/app.R#442]
+```
+
+**A:** Double check that your data is actually a .csv, i.e. actually comma-delimited. Just because it has ".csv" as a file extension may not necessarily mean that it's comma-delimited! You can check this by opening your file in a text editor, such as Notepad. If your data is comma-delimited, you should see commas between your entries. If it is not, you may see spaces or tabs. In this case, please save your data as a proper comma-delimited file.
+
+---
+
 **Q:** I get the following warnings and errors when I try to visualize my results using the .RData file:
 ```r
 Warning in circ_us & circ_jtk:
