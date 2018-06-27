@@ -1,6 +1,6 @@
 # Extended Oscillations Function Source
 # By Hannah De los Santos
-# ECHO v 1.81
+# ECHO v 1.83
 # Code description: Contains all the funcitons for extended harmonic oscillator work, in order to have less confusion between scripts.
 
 # function to represent damped oscillator with phase and equilibrium shift formula
@@ -271,12 +271,15 @@ jtkdist <- function(timepoints,reps=1,normal=FALSE,alt=FALSE) {
     jtk.dims <- c(nn*(nn-1)/2,1) # dimensions for distribution
 
     if(normal) { # unused, practically
-      JTK.VAR <- (nn^2*(2*nn+3) -
+      jtk.var <- (nn^2*(2*nn+3) -
                     sum(tim^2*(2*tim+3)))/72 # variance of jtk
-      JTK.SDV <- sqrt(JTK.VAR) # standard deviation of jtk
-      JTK.EXV <- jtk.max/2 # expected value of jtk
-      JTK.EXACT <- FALSE
-      return(invisible(0)) # omit calculation of exact distribution
+      jtk.sdv <- sqrt(jtk.var) # standard deviation of jtk
+      jtk.exv <- jtk.max/2 # expected value of jtk
+      jtk.exact <- FALSE
+      
+      jtklist <- list("jtk.grp.size"=jtk.grp.size,"jtk.num.grps"=jtk.num.grps,"jtk.num.vals"=jtk.num.vals,"jtk.max"=jtk.max,"jtk.grps"=jtk.grps,"jtk.dims"=jtk.dims,"jtk.exact"=jtk.exact, "jtk.var"=jtk.var, "jtk.sdv" = jtk.sdv, "jtk.exv"=jtk.exv)
+      
+      return(jtklist) # omit calculation of exact distribution
     }
   }
   MM <- floor(M/2) # mode of this possibly alternative jtk distribution
@@ -391,10 +394,10 @@ calc_tau_and_p_jtk <- function(ref_waveform,times,num_reps,current_gene,jtklist)
   } else { # if we are using the normal distribution (unused, practically)
     p <- switch(1+alt,
                 2*pnorm(-(jtk-1/2),
-                        -JTK.EXV,JTK.SDV),
+                        -jtklist$jtk.exv,jtklist$jtk.sdv),
                 2*pnorm(-(jtk-1/2),
-                        -JTK.ALT[[alt.id]]$EXV,
-                        JTK.ALT[[alt.id]]$SDV))
+                        -jtk.alt[[alt.id]]$EXV,
+                        jtk.alt[[alt.id]]$SDV))
   }
   # include tau = S/M for this distribution
 
@@ -487,7 +490,64 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     peaks <- c(); # vector of peak values
     peaks_time <- c(); # vector of peak times
     counting <- 1; # counter
-    if (resol <= 1){
+    
+    if (resol <= ((1/12)+10^-8)){ # 17 hour surround
+      mod <- 102
+      for(i in (mod+1):(length(y_val)-mod)){
+        # deal with complete missingness
+        if (suppressWarnings(max(y_val[(i-mod):(i+mod)], na.rm = TRUE)) == -Inf | is.na(y_val[i])){
+          next
+        }
+        # otherwise continue as normal
+        if (y_val[i] == max(y_val[(i-mod):(i+mod)], na.rm = TRUE)){
+          peaks[counting] <- y_val[i]
+          peaks_time[counting] <- times[i]
+          counting <- counting+1
+        }
+      }
+    } else if (resol <= ((1/6)+10^-8)){ # 15 hour surround
+      mod <- 45
+      for(i in (mod+1):(length(y_val)-mod)){
+        # deal with complete missingness
+        if (suppressWarnings(max(y_val[(i-mod):(i+mod)], na.rm = TRUE)) == -Inf | is.na(y_val[i])){
+          next
+        }
+        # otherwise continue as normal
+        if (y_val[i] == max(y_val[(i-mod):(i+mod)], na.rm = TRUE)){
+          peaks[counting] <- y_val[i]
+          peaks_time[counting] <- times[i]
+          counting <- counting+1
+        }
+      }
+    } else if (resol <= ((1/4)+10^-8)){ # 13 hour surround
+      mod <- 26
+      for(i in (mod+1):(length(y_val)-mod)){
+        # deal with complete missingness
+        if (suppressWarnings(max(y_val[(i-mod):(i+mod)], na.rm = TRUE)) == -Inf | is.na(y_val[i])){
+          next
+        }
+        # otherwise continue as normal
+        if (y_val[i] == max(y_val[(i-mod):(i+mod)], na.rm = TRUE)){
+          peaks[counting] <- y_val[i]
+          peaks_time[counting] <- times[i]
+          counting <- counting+1
+        }
+      }
+    } else if (resol <= ((1/2)+10^-8)){ # 11 hour surround
+      mod <- 11
+      for(i in (mod+1):(length(y_val)-mod)){
+        # deal with complete missingness
+        if (suppressWarnings(max(y_val[(i-mod):(i+mod)], na.rm = TRUE)) == -Inf | is.na(y_val[i])){
+          next
+        }
+        # otherwise continue as normal
+        if (y_val[i] == max(y_val[(i-mod):(i+mod)], na.rm = TRUE)){
+          peaks[counting] <- y_val[i]
+          peaks_time[counting] <- times[i]
+          counting <- counting+1
+        }
+      }
+    } else if (resol <= 1){
       # go through gene values and find maximum as compared to 8 surrounding values
       # finding peaks for first 4 points
       # deal with complete missingness
@@ -686,7 +746,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
         lowfix <- (low/2/pi)^-1
         w0 <- 2*pi/(length(times)*resol/((highfix+lowfix)/2))
       }
-    } else if (length(peaks) == 1){ # phase shift cases only one peak to appear
+    } else if (length(peaks) == 1){ # phase shift causes only one peak to appear
       w0 <- 2*pi/(length(times)*resol/(length(peaks)+1))
     } else{
       w0 <- 2*pi/(length(times)*resol/(length(peaks)))
