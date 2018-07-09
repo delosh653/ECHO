@@ -180,7 +180,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 1.83")
+                              tags$p("ECHO Version 1.84")
                               ))
                               )),
                  
@@ -546,8 +546,6 @@ server <- function(input,output){ # aka the code behind the results
         
         
         # figuring out whether a range is wanted, adjusting accordingly
-        low_input <- as.numeric(sapply(input$low, function(x) eval(parse(text=x))))
-        high_input <- as.numeric(sapply(input$high, function(x) eval(parse(text=x))))
         if (input$low ==""){ # empty low input, adjust to time series
           if (resol >= 1){
             low <- 2*pi/resol
@@ -558,6 +556,7 @@ server <- function(input,output){ # aka the code behind the results
             low_end <- 1
           }
         } else{ # there is a low input
+          low_input <- as.numeric(sapply(input$low, function(x) eval(parse(text=x))))
           low <- 2*pi/low_input
           low_end <- low_input
         }
@@ -565,6 +564,7 @@ server <- function(input,output){ # aka the code behind the results
           high <- 2*pi/(resol*length(timen))
           high_end <- (resol*length(timen))
         } else{ # there is a high input
+          high_input <- as.numeric(sapply(input$high, function(x) eval(parse(text=x))))
           high <- 2*pi/high_input
           high_end <- high_input
         }
@@ -642,7 +642,7 @@ server <- function(input,output){ # aka the code behind the results
                             "is_normal"=input$is_normal,
                             "is_de_linear_trend"=input$is_de_linear_trend,
                             "run_jtk"=input$run_jtk,
-                            "v_num"=1.83) # VERSION NUMBER
+                            "v_num"=1.84) # VERSION NUMBER
         
         # jtk run -----
         
