@@ -1,6 +1,6 @@
 # Extended Oscillations Function Source
 # By Hannah De los Santos
-# ECHO v 1.83
+# ECHO v 1.9
 # Code description: Contains all the funcitons for extended harmonic oscillator work, in order to have less confusion between scripts.
 
 # function to represent damped oscillator with phase and equilibrium shift formula
@@ -832,14 +832,38 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     }
 
     # calculating the phase shift in terms of period (omega inverse of period)
-    if (phi > 0){ # shift to the left
-      frac_part <- (phi/(2*pi)) - trunc(phi/(2*pi))
-      dist_peak <- frac_part*(2*pi/omega) # distance from first peak
-      phase_hours <- (2*pi/omega)-dist_peak
-    } else { # shift to the right
-      frac_part <- (phi/(2*pi)) - trunc(phi/(2*pi))
-      dist_peak <- frac_part*(2*pi/omega) # distance from first peak
-      phase_hours <- abs(dist_peak)
+    if (!is.na(a)){ # all param will either be na or not
+      if (a >= 0){ # positive amplitudes
+        if (phi > 0){ # shift to the left
+          frac_part <- (phi/(2*pi)) - trunc(phi/(2*pi))
+          dist_peak <- frac_part*(2*pi/omega) # distance from first peak
+          phase_hours <- (2*pi/omega)-dist_peak
+        } else { # shift to the right
+          frac_part <- (phi/(2*pi)) - trunc(phi/(2*pi))
+          dist_peak <- frac_part*(2*pi/omega) # distance from first peak
+          phase_hours <- abs(dist_peak)
+        }
+      } else { # negative ampltitudes
+        if (phi > 0){ # shift to the left
+          frac_part <- (phi/(2*pi)) - trunc(phi/(2*pi))
+          dist_peak <- frac_part*(2*pi/omega) # distance from first peak
+          if (abs(frac_part) < .5){
+            phase_hours <- (2*pi/omega)-dist_peak - (2*pi/omega/2)
+          } else {
+            phase_hours <- (2*pi/omega)-dist_peak + (2*pi/omega/2)
+          }
+        } else { # shift to the right
+          frac_part <- (phi/(2*pi)) - trunc(phi/(2*pi))
+          dist_peak <- frac_part*(2*pi/omega) # distance from first peak
+          if (abs(frac_part) < .5){
+            phase_hours <- abs(dist_peak) + (2*pi/omega/2)
+          } else {
+            phase_hours <- abs(dist_peak) - (2*pi/omega/2)
+          }
+        }
+      }
+    } else {
+      phase_hours <- NA
     }
     # should be no negative shifts
     # if (phase_hours < 0){ # only output positive shifts
