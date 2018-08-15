@@ -1,6 +1,6 @@
 # Extended Oscillations Function Source
 # By Hannah De los Santos
-# ECHO v 1.9
+# ECHO v 2.0
 # Code description: Contains all the funcitons for extended harmonic oscillator work, in order to have less confusion between scripts.
 
 # function to represent damped oscillator with phase and equilibrium shift formula
@@ -765,15 +765,14 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     second <- which(!is.na(y_val))[2]
     third <- which(!is.na(y_val))[3]
     min_i <- 0;
+    min_vect <- rep(10000, length(0:11))
     for (i in 0:11){
       # if the phase shift at both the second and third gene values are the smallest value available for the fitted value
-      if ((abs(alt_form(a0,gam0,w0,(i*pi/6),y0,times[second])-y_val[second]))<(abs(alt_form(a0,gam0,w0,(min_i*pi/6),y0,times[second])-y_val[second]))){
-        if ((abs(alt_form(a0,gam0,w0,(i*pi/6),y0,times[third])-y_val[third]))<(abs(alt_form(a0,gam0,w0,(min_i*pi/6),y0,times[third])-y_val[third]))){
-          min_i <- i
-        }
-      }
+      min_vect[i+1] <- sum(alt_form(a0,gam0,w0,(i*pi/6),y0,times[second])-y_val[second],
+                           alt_form(a0,gam0,w0,(i*pi/6),y0,times[third])-y_val[third])
     }
-    phi0 <- min_i*pi/6 # intial value for phase shift
+    # phi0 <- min_i*pi/6 # intial value for phase shift
+    phi0 <- (which.min(abs(min_vect))-1)*pi/6 # intial value for phase shift
 
     if (num_reps == 1){ # one replicate
       # put the times into a data frame
