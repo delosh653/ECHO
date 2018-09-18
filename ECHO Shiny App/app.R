@@ -76,13 +76,10 @@ ui <- fluidPage(
                  
                  div(style="display: inline-block; width: 80px;",
                      textInput("begin", "Start Time *")),
-                 
                  div(style="display: inline-block; width: 80px;",
                      textInput("end", "End Time *")),
-                 
                  div(style="display: inline-block; width: 90px;",
                      textInput("resol", "Resolution *")),
-                 
                  div(style="display: inline-block; vertical-align: top; width: 5px;",
                      actionButton("time_help", icon("question", lib="font-awesome"))),
                  uiOutput("Help_time"),
@@ -120,6 +117,8 @@ ui <- fluidPage(
                  
                  div(style="display: inline-block;",
                      checkboxInput("rem_unexpr", "Remove unexpressed genes?", value = FALSE, width = NULL)),
+                 div(style="display: inline-block; width: 70px;",
+                     numericInput("rem_unexpr_amt_below", "Cutoff?", value = 0, step = 1, width = NULL)),
                  div(style="display: inline-block; width: 95px;",
                      numericInput("rem_unexpr_amt", "Threshold %?", value = 70,min = 0, max = 100, step = 1, width = NULL)),
                  div(style="display: inline-block; vertical-align:top;  width: 20px;",
@@ -180,7 +179,7 @@ ui <- fluidPage(
                               "All images created by ECHO using data from:",tags$br(),
                               "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                               tags$br(),tags$br(),
-                              tags$p("ECHO Version 2.0")
+                              tags$p("ECHO Version 2.1")
                               ))
                               )),
                  
@@ -192,9 +191,9 @@ ui <- fluidPage(
                                      ("- Gene Name: The name of each expression, as entered in the original data file."),tags$br(),
                                      ("- Convergence: Whether or not ECHO's fitting method converged for each expression. This column will also contain markers for 'No Deviation', which means a constant gene, or 'Unexpressed', if removing unexpressed genes was selected during the run."),tags$br(),
                                      ("- Iterations: Amount of iterations for ECHO's fitting method."),tags$br(),
-                                     ("- Forcing.Coefficient*: Parameter which states the amount of amplitude change over time in the system."),tags$br(),
-                                     ("- Oscillation Type*: States the expression's category based on forcing coefficient (driven, damped, harmonic, overexpressed, repressed)."),tags$br(),
-                                     ("- Amplitude*: Parameter describing initial amplitude of expression."),tags$br(),
+                                     ("- Amplitude.Change.Coefficient*: Parameter which states the amount of amplitude change over time in the system."),tags$br(),
+                                     ("- Oscillation Type*: States the expression's category based on forcing coefficient (forced, damped, harmonic, overexpressed, repressed)."),tags$br(),
+                                     ("- Initial.Amplitude*: Parameter describing initial amplitude of expression."),tags$br(),
                                      ("- Radian.Frequency*: Parameter describing frequency of oscillations, in radians."),tags$br(),
                                      ("- Period*: States the time for one complete oscillation, assumed to be in hours."),tags$br(),
                                      ("- Phase Shift*: Parameter describing the amount the oscillator is shifted, in radians."),tags$br(),
@@ -240,6 +239,14 @@ ui <- fluidPage(
         div(style="display: inline-block; vertical-align:top;  width: 20px;",
             actionButton("restrict_help", icon("question", lib="font-awesome"))),
         uiOutput("Help_restrict"),
+        # HERE
+        div(style="display: inline-block; width: 90px;",
+            textInput("start_range", "Start Period")),
+        div(style="display: inline-block; width: 90px;",
+            textInput("end_range", "End Period")),
+        div(style="display: inline-block; vertical-align: top; width: 5px;",
+            actionButton("time_range_help", icon("question", lib="font-awesome"))),
+        uiOutput("Help_time_range"),
         
         selectInput("viz","Choose Visualization Method",c("Venn Diagram","Gene Expression Graph","Gene Expression with Replicates","Heat Map","Parameter Density Graph (PDG)")),
         
@@ -249,17 +256,17 @@ ui <- fluidPage(
         
         numericInput("pval_cutoff","Enter P-Value Significance Cutoff (for PDG, Heat Maps, Gene Lists)",min = 0, max = 1, step = .01, value = 0.05),
         
-        selectInput("coeff","Choose Coefficient to View (for PDG)",c("Forcing.Coefficient","Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted", "Equilibrium Value", "Tau", "P-Value", "BH Adj P-Value", "BY Adj P-Value")),
+        selectInput("coeff","Choose Coefficient to View (for PDG)",c("Amplitude.Change.Coefficient","Initial.Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted", "Equilibrium Value", "Tau", "P-Value", "BH Adj P-Value", "BY Adj P-Value")),
         
         div(style="display: inline-block;",
-            selectInput("subset_look","Subset of Data to View (for PDG and Gene Lists)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Repressed","Overexpressed","Nonconverged","Nonstarter","No Deviation","Both ECHO and JTK","Only JTK","Only ECHO","Neither ECHO and JTK"))),
+            selectInput("subset_look","Subset of Data to View (for PDG and Gene Lists)",c("None","ECHO","JTK_CYCLE","Forced","Damped","Harmonic","Repressed","Overexpressed","Nonconverged","Nonstarter","No Deviation","Both ECHO and JTK","Only JTK","Only ECHO","Neither ECHO and JTK"))),
         
         div(style="display: inline-block; vertical-align:top;  width: 20px;",
             actionButton("subset_help", icon("question", lib="font-awesome"))),
         uiOutput("Help_subset"),
         
         div(style="display: inline-block;",
-            selectInput("heat_subset_look","Subset of Data to View (for Heat Maps)",c("None","ECHO","JTK_CYCLE","Driven","Damped","Harmonic","Repressed","Overexpressed","Both ECHO and JTK","Only JTK","Only ECHO","Neither ECHO and JTK"))),
+            selectInput("heat_subset_look","Subset of Data to View (for Heat Maps)",c("None","ECHO","JTK_CYCLE","Forced","Damped","Harmonic","Repressed","Overexpressed","Both ECHO and JTK","Only JTK","Only ECHO","Neither ECHO and JTK"))),
         div(style="display: inline-block; vertical-align:top;  width: 20px;",
             actionButton("heat_subset_help", icon("question", lib="font-awesome"))),
         uiOutput("Help_heat_subset"),
@@ -286,7 +293,7 @@ ui <- fluidPage(
                    tags$div(class="header", checked = NA,
                             list(
                               tags$p("Once you have run your data, you can visualize and explore your results using the .RData
-                                     file available for download after your run. (*: Note that .PNG download is not available for Venn Diagrams and Heat Maps, but right-click copy and paste works well.) To update visualizations or gene lists, select options from each of the drop down menus to the left and press Update. There are five types of visualizations/
+                                     file available for download after your run. (*: Note that .PNG download is not available for Venn Diagrams and Heat Maps, but right-click copy and paste or the snipping tool work well.) To update visualizations or gene lists, select options from each of the drop down menus to the left and press Update. There are five types of visualizations/
                                      explorations currently available:"),
                               HTML('<center>'),tags$b("Gene Lists:"),HTML('</center>'),
                               tags$p("A subset of ECHO parameter results for exploration, which can be sorted by any parameter.These subsets are specified by the P-Value Type, P-Value Cutoff, and
@@ -349,7 +356,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_time=renderUI({ # time inputs help
       if(input$time_help%%2){
-        helpText("These numbers indicate the beginning, end, and resolution (difference between time points) of the time points in your data. For example, data that begins at 2 hours, ends at 48 hours, with a resolution of 2 hours.")
+        helpText("These numbers indicate the beginning, end, and resolution (difference between time points) of the time points in your data (in hours). For example, data that begins at 2 hours, ends at 48 hours, with a resolution of 2 hours. If your data has points in a fractional amount of hours, please enter the fraction into the box, in the form: numerator/denominator.")
       }
       else{
         return()
@@ -373,7 +380,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_remove=renderUI({ #remove unexpressed genes help
       if(input$remove_help%%2){
-        helpText("If checked, marks and does not fit genes that have low detection/expression in the dataset. A gene is considered adequately expressed for modeling if a nonzero value is available for at least the specified threshold percentage of the total time points. A 70% threshold is recommended. By default, genes with a zero value at all time points are marked and not fit to allow appropriate calculation of multiple hypothesis corrections. Recommended.")
+        helpText("If checked, marks and does not fit genes that have low detection/expression in the dataset. A gene is considered adequately expressed for modeling if a absolute value above the cutoff is available for at least the specified threshold percentage of the total time points. A 70% threshold is recommended. By default, genes with a zero value at all time points are marked and not fit to allow appropriate calculation of multiple hypothesis corrections. Recommended.")
       }
       else{
         return()
@@ -397,7 +404,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_subset=renderUI({
       if(input$subset_help%%2){ # forcing coefficient help
-        helpText("Identifies which subset of data to view for specified visualizations. For more information regarding what terms such as 'Both ECHO and JTK' and 'Only JTK' mean, please view Venn Diagram summary. Note 1: Forcing coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
+        helpText("Identifies which subset of data to view for specified visualizations. For more information regarding what terms such as 'Both ECHO and JTK' and 'Only JTK' mean, please view Venn Diagram summary. Note 1: Amplitude Change coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
       }
       else{
         return()
@@ -413,7 +420,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_heat_subset=renderUI({
       if(input$heat_subset_help%%2){ # forcing coefficient help
-        helpText("Identifies which subset of data to view for heat map visualizations. For more information regarding what terms such as 'Both ECHO and JTK' and 'Only JTK' mean, please view Venn Diagram summary. Note 1: Forcing coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
+        helpText("Identifies which subset of data to view for heat map visualizations. For more information regarding what terms such as 'Both ECHO and JTK' and 'Only JTK' mean, please view Venn Diagram summary. Note 1: Amplitude Change coefficient values are restricted by ECHO significance speficied. Note 2: Some subsets are not available if JTK_CYCLE results are not available. ")
       }
       else{
         return()
@@ -430,6 +437,14 @@ server <- function(input,output){ # aka the code behind the results
     output$Help_de_linear_trend=renderUI({
       if(input$de_linear_trend_help%%2){ # forcing coefficient help
         helpText("If checked, removes linear trend, or baseline, from data. For paired replicates, the linear trend is computed and removed from each replicate. For unpaired data, the linear trend is computed and removed from all replicates together.")
+      }
+      else{
+        return()
+      }
+    })
+    output$Help_time_range=renderUI({ # time inputs help
+      if(input$time_range_help%%2){
+        helpText("These numbers indicate the beginning and end of time range you would like to view in visualizations and gene lists. If nothing is entered, the entire time range of rhythms that was searched for will be displayed. If your data has points in a fractional amount of hours, please enter the fraction into the box, in the form: numerator/denominator. Note: unexpressed/constant/genes with too much noise as determined by ECHO are automatically removed.")
       }
       else{
         return()
@@ -498,9 +513,10 @@ server <- function(input,output){ # aka the code behind the results
         
         rem_unexpr <- input$rem_unexpr # indicator for removing unexpressed genes
         rem_unexpr_amt <- (input$rem_unexpr_amt)/100 # threshold for removing unexpressed genes, converted to a decimal
+        rem_unexpr_amt_below <- abs(input$rem_unexpr_amt_below)
         # if yes, check for genes that are unexpressed before preprocessing
         if (rem_unexpr){
-          rem_unexpr_vect <- genes_unexpressed_all(rem_unexpr_amt)
+          rem_unexpr_vect <- genes_unexpressed_all(rem_unexpr_amt,rem_unexpr_amt_below)
         } else{
           rem_unexpr_vect <- rep(FALSE,nrow(genes))
         }
@@ -513,7 +529,11 @@ server <- function(input,output){ # aka the code behind the results
         
         # remove baseline
         if (input$is_de_linear_trend){
-          genes <- de_linear_trend_all(timen,num_reps,tied)
+          res_list <- de_linear_trend_all(timen,num_reps,tied)
+          genes <- res_list$res_df # expressions with removed baseline
+          beta <- res_list$beta # slopes
+        } else {
+          beta <- rep(NA, nrow(genes))
         }
         
         # getting average data, for more than one replicate
@@ -579,7 +599,7 @@ server <- function(input,output){ # aka the code behind the results
         #}
         
         # prepare for parallelism
-        cores = detectCores() # dectect how many processors
+        cores <- detectCores() # dectect how many processors
         cl <- makeCluster(cores[1]-1) # not to overload your computer, need one for OS
         registerDoSNOW(cl)
         
@@ -602,18 +622,22 @@ server <- function(input,output){ # aka the code behind the results
         stopCluster(cl) # stop using the clusters
         
         # renaming columns of the final results
-        colnames(total_results) <- c("Gene Name","Convergence","Iterations","Forcing.Coefficient","Oscillation Type","Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted","Equilibrium Value", "Tau", "P-Value", paste(rep("Original TP",length(rep(timen, each = num_reps))),rep(timen, each = num_reps),rep(".",length(rep(timen, each = num_reps))),rep(c(1:num_reps), length(timen)),sep=""), paste(rep("Fitted TP",length(timen)),timen,sep=""))
+        colnames(total_results) <- c("Gene Name","Convergence","Iterations","Amplitude.Change.Coefficient","Oscillation Type","Initial.Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted","Equilibrium Value", "Tau", "P-Value", paste(rep("Original TP",length(rep(timen, each = num_reps))),rep(timen, each = num_reps),rep(".",length(rep(timen, each = num_reps))),rep(c(1:num_reps), length(timen)),sep=""), paste(rep("Fitted TP",length(timen)),timen,sep=""))
         
         # remove the fake row I added if there is only one gene
         if (add_one){
           total_results <- total_results[-nrow(total_results),]
         }
         
+        # add slope
+        total_results <- cbind(total_results[,c(1:11)],`Slope` = beta, total_results[,c(12:ncol(total_results))])
+        
         adjusted_p_val_us <- p.adjust(unlist(total_results$`P-Value`), method = "BH") # benjamini-hochberg adjust p-values
-        total_results <- cbind(total_results[,c(1:13)],`BH Adj P-Value` = adjusted_p_val_us, total_results[,c(14:ncol(total_results))]) # assign to data frame
+        # add BH adjusted pvalue
+        total_results <- cbind(total_results[,c(1:14)],`BH Adj P-Value` = adjusted_p_val_us, total_results[,c(15:ncol(total_results))])
         
         # adding the benjamini-hochberg-yekutieli p-value adjustment
-        total_results <- cbind(total_results[,c(1:14)],`BY Adj P-Value` = p.adjust(unlist(total_results$`P-Value`), method = "BY"), total_results[,c(15:ncol(total_results))])
+        total_results <- cbind(total_results[,c(1:15)],`BY Adj P-Value` = p.adjust(unlist(total_results$`P-Value`), method = "BY"), total_results[,c(16:ncol(total_results))])
         
         
         # time measured - output
@@ -632,6 +656,7 @@ server <- function(input,output){ # aka the code behind the results
         print(paste("Ended on:",Sys.time())) # show ending time in console window
         
         user_input <<- list("ECHO_end_date" = Sys.time(),
+                            "file_name"=input$data_file$name,
                             "begin"=begin,
                             "end"=end,
                             "resol"=resol,
@@ -639,10 +664,11 @@ server <- function(input,output){ # aka the code behind the results
                             "is_smooth"=input$smooth,
                             "rem_unexpr"=rem_unexpr,
                             "rem_unexpr_amt"=rem_unexpr_amt,
+                            "rem_unexpr_amt_below"=rem_unexpr_amt_below,
                             "is_normal"=input$is_normal,
                             "is_de_linear_trend"=input$is_de_linear_trend,
                             "run_jtk"=input$run_jtk,
-                            "v_num"=2.0) # VERSION NUMBER
+                            "v_num"=2.1) # VERSION NUMBER
         
         # jtk run -----
         
@@ -658,7 +684,7 @@ server <- function(input,output){ # aka the code behind the results
           options(stringsAsFactors=FALSE)
           # if smoothed, the smoothed data appears in the total_results dataframe
           if(input$smooth){
-            data <- total_results[,c(16:(15+(length(timen)*num_reps)))]
+            data <- total_results[,c(17:(16+(length(timen)*num_reps)))]
             data <- cbind(genes[,1],data)
             colnames(data)[1] <- "Gene.Name"
           } else{ # otherwise, just use the inputted data
@@ -731,38 +757,12 @@ server <- function(input,output){ # aka the code behind the results
           }
         })
         
-        # function to download gene list subset as a csv
-        # output$downloadZip <- downloadHandler(
-        #   filename = function() { paste(input$project,'.zip', sep='') },
-        #   content = function(file) {
-        #     #go to a temp dir to avoid permission issues
-        #     owd <- setwd(tempdir())
-        #     on.exit(setwd(owd))
-        #     files <- NULL;
-        #     
-        #     #write each output to a csv file, save the name
-        #     fileName <- paste('ECHO_',input$project,'.csv', sep='')
-        #     write.csv(total_results,fileName, row.names = F)
-        #     files <- c(fileName,files)
-        #     if (input$run_jtk && input$high != "" && input$low != ""){
-        #       fileName <- paste('JTK_',input$project,'.csv', sep='')
-        #       write.csv(JTK_results,fileName,sep = ';', row.names = F)
-        #       files <- c(fileName,files)
-        #     }
-        #     fileName <- paste(input$project,'.RData', sep='')
-        #     save.image(fileName)
-        #     files <- c(fileName,files)
-        #     
-        #     #create the zip file
-        #     zip(file,files)
-        #   }
-        # )
         
         output$downloadECHO <- downloadHandler( # ECHO results
           filename = function() { paste('ECHO_',input$project,'.csv', sep='') },
           content = function(file) {
             fileName <- paste('ECHO_',input$project,'.csv', sep='')
-            write.csv(total_results,file, row.names = F)
+            write.csv(total_results,file, row.names = F, na = "")
           }
         )
         if ((input$run_jtk && input$high != "" && input$low != "") | (input$run_jtk && input$use_example)){
@@ -770,7 +770,7 @@ server <- function(input,output){ # aka the code behind the results
             filename = function() { paste('JTK_',input$project,'.csv', sep='') },
             content = function(file) {
               fileName <- paste('JTK_',input$project,'.csv', sep='')
-              write.csv(JTK_results,file, row.names = F)
+              write.csv(JTK_results,file, row.names = F,na = "")
             }
           )
         }
@@ -780,6 +780,7 @@ server <- function(input,output){ # aka the code behind the results
             if ((input$run_jtk && input$high != "" && input$low != "") | (input$run_jtk && input$use_example)){
               save(file=file,list=c("JTK_results","total_results","num_reps","low","high","timen","user_input","high_end","low_end"))
             } else {
+              user_input$run_jtk <- F
               save(file=file,list=c("total_results","num_reps","low","high","timen","user_input","high_end","low_end"),file)
             }
             
@@ -807,19 +808,27 @@ server <- function(input,output){ # aka the code behind the results
     # call upon user input
     is_jtk <- user_input$run_jtk
     
-    #low_end <- floor(2*pi/low)
-    #high_end <- ceiling(2*pi/high)
+    tr_sub <- total_results
+    if (input$start_range != ""){
+      tr_sub <- tr_sub[!is.na(tr_sub$Period),]
+      tr_sub <- tr_sub[tr_sub$Period >= as.numeric(sapply(input$start_range, function(x) eval(parse(text=x)))),]
+    }
+    if (input$end_range != ""){
+      tr_sub <- tr_sub[!is.na(tr_sub$Period),]
+      tr_sub <- tr_sub[tr_sub$Period <= as.numeric(sapply(input$end_range, function(x) eval(parse(text=x)))),]
+    }
     
-    circ_us <- (total_results$Period<=high_end & total_results$Period >=low_end & total_results[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
+    
+    circ_us <- (tr_sub$Period<=high_end & tr_sub$Period >=low_end & tr_sub[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
     circ_us[is.na(circ_us)] <- FALSE # na's are false
     if (!input$no_restrict_gamma){
-      circ_us[total_results$`Oscillation Type` == "Repressed" | total_results$`Oscillation Type` == "Overexpressed"] <- FALSE # restricting gamma for circadian genes
+      circ_us[tr_sub$`Oscillation Type` == "Repressed" | tr_sub$`Oscillation Type` == "Overexpressed"] <- FALSE # restricting gamma for circadian genes
     }
     
     
     if (is_jtk){
       # getting JTK circadian genes
-      JTK_results[,1] <- factor(JTK_results[,1], levels = unique(total_results$`Gene Name`)) # match JTK rows to our rows
+      JTK_results[,1] <- factor(JTK_results[,1], levels = unique(tr_sub$`Gene Name`)) # match JTK rows to our rows
       JTK_results <- JTK_results[order(JTK_results[,1]),] # reorder JTK rows to be the same as our result's rows
       
       if (input$pval_cat == "P-Value"){
@@ -851,22 +860,22 @@ server <- function(input,output){ # aka the code behind the results
     }
     
     # logicals
-    nas_found <- (is.na(total_results$Forcing.Coefficient)) # amount of nas
-    nonconv <- ((total_results$Convergence==0)) # amount of results that didn't converge
-    nodev <- (total_results$Convergence=="No Deviation") # results with no standard deviation deviation
+    nas_found <- (is.na(tr_sub$Amplitude.Change.Coefficient)) # amount of nas
+    nonconv <- ((tr_sub$Convergence==0)) # amount of results that didn't converge
+    nodev <- (tr_sub$Convergence=="No Deviation") # results with no standard deviation deviation
     nodev[is.na(nodev)] <- FALSE # na's are false
-    noexpr <- (total_results$Convergence=="Unexpressed") # results with no standard deviation deviation
+    noexpr <- (tr_sub$Convergence=="Unexpressed") # results with no standard deviation deviation
     noexpr[is.na(noexpr)] <- FALSE # na's are false
     # only showing significant, by our measures
-    driven <- total_results$`Oscillation Type` == "Driven" & circ_us
-    damped <- total_results$`Oscillation Type` == "Damped" & circ_us
-    harmonic <- total_results$`Oscillation Type` == "Harmonic" & circ_us
+    forced <- tr_sub$`Oscillation Type` == "Forced" & circ_us
+    damped <- tr_sub$`Oscillation Type` == "Damped" & circ_us
+    harmonic <- tr_sub$`Oscillation Type` == "Harmonic" & circ_us
     
-    # adjust significance for over damped/driven genes
-    circ_over <-  (total_results$Period<=high_end & total_results$Period >=low_end & total_results[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
+    # adjust significance for over damped/forced genes
+    circ_over <-  (tr_sub$Period<=high_end & tr_sub$Period >=low_end & tr_sub[,input$pval_cat]<as.numeric(input$pval_cutoff)) # circadian genes
     circ_over[is.na(circ_over)] <- FALSE # na's are false
-    overexpressed <- total_results$`Oscillation Type` == "Overexpressed" & circ_over
-    repressed <- total_results$`Oscillation Type` == "Repressed" & circ_over
+    overexpressed <- tr_sub$`Oscillation Type` == "Overexpressed" & circ_over
+    repressed <- tr_sub$`Oscillation Type` == "Repressed" & circ_over
     
     # gene list output based on specified subset
     { 
@@ -875,109 +884,109 @@ server <- function(input,output){ # aka the code behind the results
       }
       else if(input$subset_look == "None"){
         if (is_jtk){
-          df<-as.data.frame(cbind(total_results[,1:15],JTK_results[,2:4]))
+          df<-as.data.frame(cbind(tr_sub[,1:16],JTK_results[,2:4]))
         } else {
-          df<-as.data.frame(total_results[,1:15])
+          df<-as.data.frame(tr_sub[,1:16])
         }
       }
       else if(input$subset_look == "JTK_CYCLE"){
         if(is_jtk){
-          df <-as.data.frame(cbind(total_results[circ_jtk,1:15],JTK_results[circ_jtk,2:4]))
+          df <-as.data.frame(cbind(tr_sub[circ_jtk,1:16],JTK_results[circ_jtk,2:4]))
         } else {
-          df<-as.data.frame(total_results[circ_jtk,1:15])
+          df<-as.data.frame(tr_sub[circ_jtk,1:16])
         }
         
       }
       else if(input$subset_look == "ECHO"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[circ_us,1:15],JTK_results[circ_us,2:4]))
+          df<-as.data.frame(cbind(tr_sub[circ_us,1:16],JTK_results[circ_us,2:4]))
         } else {
-          df<-as.data.frame(total_results[circ_us,1:15])
+          df<-as.data.frame(tr_sub[circ_us,1:16])
         }
       }
       else if(input$subset_look == "Damped"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[damped,1:15],JTK_results[damped,2:4]))
+          df<-as.data.frame(cbind(tr_sub[damped,1:16],JTK_results[damped,2:4]))
         } else {
-          df<-as.data.frame(total_results[damped,1:15])
+          df<-as.data.frame(tr_sub[damped,1:16])
         }
       }
-      else if(input$subset_look == "Driven"){
+      else if(input$subset_look == "Forced"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[driven,1:15],JTK_results[driven,2:4]))
+          df<-as.data.frame(cbind(tr_sub[forced,1:16],JTK_results[forced,2:4]))
         } else {
-          df<-as.data.frame(total_results[driven,1:15])
+          df<-as.data.frame(tr_sub[forced,1:16])
         }
       }
       else if(input$subset_look == "Harmonic"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[harmonic,1:15],JTK_results[harmonic,2:4]))
+          df<-as.data.frame(cbind(tr_sub[harmonic,1:16],JTK_results[harmonic,2:4]))
         } else {
-          df<-as.data.frame(total_results[harmonic,1:15])
+          df<-as.data.frame(tr_sub[harmonic,1:16])
         }
       }
       else if(input$subset_look == "Repressed"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[repressed,1:15],JTK_results[repressed,2:4]))
+          df<-as.data.frame(cbind(tr_sub[repressed,1:16],JTK_results[repressed,2:4]))
         } else {
-          df<-as.data.frame(total_results[repressed,1:15])
+          df<-as.data.frame(tr_sub[repressed,1:16])
         }
         
       }
       else if(input$subset_look == "Overexpressed"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[overexpressed,1:15],JTK_results[overexpressed,2:4]))
+          df<-as.data.frame(cbind(tr_sub[overexpressed,1:16],JTK_results[overexpressed,2:4]))
         } else {
-          df<-as.data.frame(total_results[overexpressed,1:15])
+          df<-as.data.frame(tr_sub[overexpressed,1:16])
         }
       }
       else if(input$subset_look == "Nonconverged"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[nonconv,1:15],JTK_results[nonconv,2:4]))
+          df<-as.data.frame(cbind(tr_sub[nonconv,1:16],JTK_results[nonconv,2:4]))
         } else {
-          df<-as.data.frame(total_results[nonconv,1:15])
+          df<-as.data.frame(tr_sub[nonconv,1:16])
         }
       }
       else if(input$subset_look == "Nonstarter"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[nas_found-nodev,1:15],JTK_results[nas_found-nodev,2:4]))
+          df<-as.data.frame(cbind(tr_sub[nas_found-nodev,1:16],JTK_results[nas_found-nodev,2:4]))
         } else {
-          df<-as.data.frame(total_results[nas_found-nodev,1:15])
+          df<-as.data.frame(tr_sub[nas_found-nodev,1:16])
         }
       }
       else if(input$subset_look == "No Deviation"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[nodev,1:15],JTK_results[nodev,2:4]))
+          df<-as.data.frame(cbind(tr_sub[nodev,1:16],JTK_results[nodev,2:4]))
         } else {
-          df<-as.data.frame(total_results[nodev,1:15])
+          df<-as.data.frame(tr_sub[nodev,1:16])
         }
       }
       else if(input$subset_look == "Both ECHO and JTK"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[both,1:15],JTK_results[both,2:4]))
+          df<-as.data.frame(cbind(tr_sub[both,1:16],JTK_results[both,2:4]))
         } else {
-          df<-as.data.frame(total_results[both,1:15])
+          df<-as.data.frame(tr_sub[both,1:16])
         }
       }
       else if(input$subset_look == "Only JTK"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[theirs,1:15],JTK_results[theirs,2:4]))
+          df<-as.data.frame(cbind(tr_sub[theirs,1:16],JTK_results[theirs,2:4]))
         } else {
-          df<-as.data.frame(total_results[theirs,1:15])
+          df<-as.data.frame(tr_sub[theirs,1:16])
         }
       }
       else if(input$subset_look == "Only ECHO"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[ours,1:15],JTK_results[ours,2:4]))
+          df<-as.data.frame(cbind(tr_sub[ours,1:16],JTK_results[ours,2:4]))
         } else {
-          df<-as.data.frame(total_results[ours,1:15])
+          df<-as.data.frame(tr_sub[ours,1:16])
         }
       }
       else if(input$subset_look == "Neither ECHO and JTK"){
         if(is_jtk){
-          df<-as.data.frame(cbind(total_results[diff,1:15],JTK_results[diff,2:4]))
+          df<-as.data.frame(cbind(tr_sub[diff,1:16],JTK_results[diff,2:4]))
         } else {
-          df<-as.data.frame(total_results[diff,1:15])
+          df<-as.data.frame(tr_sub[diff,1:16])
         }
       }
       
@@ -995,18 +1004,19 @@ server <- function(input,output){ # aka the code behind the results
     )
     
     if (num_reps > 1){ # create a data frame for gene visualizations
-      if(sum(total_results$`Gene Name`==input$gene_name)!=0){
-        rep_genes <- total_results[total_results$'Gene Name'==input$gene_name,16:(15+(length(timen)*num_reps))]
+      if(sum(tr_sub$`Gene Name`==input$gene_name)!=0){
+        rep_genes <- tr_sub[tr_sub$'Gene Name'==input$gene_name,17:(16+(length(timen)*num_reps))]
         
         ribbon.df <- data.frame(matrix(ncol = 4+num_reps, nrow = length(timen)))
         colnames(ribbon.df) <- c("Times","Fit","Min","Max", paste(rep("Rep",num_reps),c(1:num_reps), sep=".")) # assigning column names
         ribbon.df$Times <- timen
-        ribbon.df$Fit <- t(total_results[total_results$'Gene Name'==input$gene_name,c((16+(length(timen)*num_reps)):ncol(total_results))]) # assigning the fit
+        ribbon.df$Fit <- t(tr_sub[tr_sub$'Gene Name'==input$gene_name,c((17+(length(timen)*num_reps)):ncol(tr_sub))]) # assigning the fit
         ribbon.df$Min <- sapply(seq(1,ncol(rep_genes), by = num_reps), function(x) min(unlist(rep_genes[,c(x:(num_reps-1+x))]), na.rm = TRUE)) # getting min values of replicates
         ribbon.df$Max <- sapply(seq(1,ncol(rep_genes), by = num_reps), function(x) max(unlist(rep_genes[,c(x:(num_reps-1+x))]), na.rm = TRUE)) # getting max values of replicates
         for (i in 1:num_reps){ # assign each of the replicates
           ribbon.df[,4+i] <- t(rep_genes[,seq(i,ncol(rep_genes),by=num_reps)])
         }
+        colnames(ribbon.df) <- c("Times","Fit","Min","Max", paste(rep("Rep",num_reps),c(1:num_reps), sep=".")) # assigning column names
       }
     }
     
@@ -1014,26 +1024,27 @@ server <- function(input,output){ # aka the code behind the results
     # Visualization Ouptuts ----
     
     if(input$viz == "Gene Expression Graph"){
-      if(sum(total_results$`Gene Name`==input$gene_name)==0){ # if the gene name inputted isn't in set
+      if(sum(tr_sub$`Gene Name`==input$gene_name)==0){ # if the gene name inputted isn't in set
         output$text <- renderPrint({cat("")}) # no text
         plot_viz<-ggplot() # no visualization
       }
       else{
         # summary in the UI is all of the statistics vital to the gene (name, p-value, etc.)
         output$text <- renderPrint({
-          cat(paste("Gene Name:",total_results$`Gene Name`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Convergence:", total_results$Convergence[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Iterations:",total_results$Iterations[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Forcing Coefficient:", total_results$Forcing.Coefficient[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Oscillation Type:",total_results$`Oscillation Type`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Amplitude:", total_results$Amplitude[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Radian.Frequency:",total_results$Radian.Frequency[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Period:",total_results$Period[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Phase Shift:",total_results$`Phase Shift`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Hours Shifted:",total_results$`Hours Shifted`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("P-Value:",total_results$`P-Value`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("BH Adj P-Value:",total_results$`BH Adj P-Value`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("BY Adj P-Value:",total_results$`BY Adj P-Value`[total_results$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Gene Name:",tr_sub$`Gene Name`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Convergence:", tr_sub$Convergence[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Iterations:",tr_sub$Iterations[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Amplitude Change Coefficient:", tr_sub$Amplitude.Change.Coefficient[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Oscillation Type:",tr_sub$`Oscillation Type`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Initial.Amplitude:", tr_sub$Initial.Amplitude[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Radian.Frequency:",tr_sub$Radian.Frequency[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Period:",tr_sub$Period[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Phase Shift:",tr_sub$`Phase Shift`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Hours Shifted:",tr_sub$`Hours Shifted`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Slope:",tr_sub$`Slope`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("P-Value:",tr_sub$`P-Value`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("BH Adj P-Value:",tr_sub$`BH Adj P-Value`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("BY Adj P-Value:",tr_sub$`BY Adj P-Value`[tr_sub$`Gene Name`==input$gene_name],"\n"))
         })
         if (num_reps == 1){ # single replicate
           # generate a graph of gene expression with original data and fitted data
@@ -1041,8 +1052,8 @@ server <- function(input,output){ # aka the code behind the results
           # getting the total results: original and fitted values
           data.m <- data.frame(matrix(0,length(timen),3))
           colnames(data.m) <- c("Original","Fit","Times")
-          data.m$Original <- as.numeric(total_results[total_results$`Gene Name`==input$gene_name,c(16:(length(timen)+15))])
-          data.m$Fit <- as.numeric(total_results[total_results$`Gene Name`==input$gene_name,-c(1:(length(timen)+15))])
+          data.m$Original <- as.numeric(tr_sub[tr_sub$`Gene Name`==input$gene_name,c(17:(length(timen)+16))])
+          data.m$Fit <- as.numeric(tr_sub[tr_sub$`Gene Name`==input$gene_name,-c(1:(length(timen)+16))])
           data.m$Times <- timen
           
           # create gene expression plot
@@ -1076,25 +1087,26 @@ server <- function(input,output){ # aka the code behind the results
       #Plot the fit line and min/max shading
       #Plot the fit line with shading and replicate expressions
       
-      if(num_reps == 1 ||sum(total_results$`Gene Name`==input$gene_name)==0){ # if the gene name inputted isn't in set
+      if(num_reps == 1 ||sum(tr_sub$`Gene Name`==input$gene_name)==0){ # if the gene name inputted isn't in set
         output$text <- renderPrint({cat(paste(""))}) # no text
         plot_viz<-ggplot() # no plot
       }
       else{
         output$text <- renderPrint({  # summary in the UI is all of the statistics vital to the gene (name, p-value, etc.)
-          cat(paste("Gene Name:",total_results$`Gene Name`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Convergence:", total_results$Convergence[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Iterations:",total_results$Iterations[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Forcing Coefficient:", total_results$Forcing.Coefficient[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Oscillation Type:",total_results$`Oscillation Type`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Amplitude:", total_results$Amplitude[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Radian.Frequency:",total_results$Radian.Frequency[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Period:",total_results$Period[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Phase Shift:",total_results$`Phase Shift`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("Hours Shifted:",total_results$`Hours Shifted`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("P-Value:",total_results$`P-Value`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("BH Adj P-Value:",total_results$`BH Adj P-Value`[total_results$`Gene Name`==input$gene_name],"\n"))
-          cat(paste("BY Adj P-Value:",total_results$`BY Adj P-Value`[total_results$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Gene Name:",tr_sub$`Gene Name`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Convergence:", tr_sub$Convergence[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Iterations:",tr_sub$Iterations[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Amplitude Change Coefficient:", tr_sub$Amplitude.Change.Coefficient[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Oscillation Type:",tr_sub$`Oscillation Type`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Initial.Amplitude:", tr_sub$Initial.Amplitude[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Radian.Frequency:",tr_sub$Radian.Frequency[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Period:",tr_sub$Period[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Phase Shift:",tr_sub$`Phase Shift`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Hours Shifted:",tr_sub$`Hours Shifted`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("Slope:",tr_sub$`Slope`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("P-Value:",tr_sub$`P-Value`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("BH Adj P-Value:",tr_sub$`BH Adj P-Value`[tr_sub$`Gene Name`==input$gene_name],"\n"))
+          cat(paste("BY Adj P-Value:",tr_sub$`BY Adj P-Value`[tr_sub$`Gene Name`==input$gene_name],"\n"))
         })
         
         if(num_reps > 8){ # cannot visualize more than 8 replicates
@@ -1140,10 +1152,10 @@ server <- function(input,output){ # aka the code behind the results
         }
         else if(input$subset_look == "None"){
           output$text <- renderPrint({
-            summary(total_results[,input$coeff])
+            summary(tr_sub[,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[!is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[!is.na(tr_sub$Amplitude.Change.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1151,10 +1163,10 @@ server <- function(input,output){ # aka the code behind the results
         }
         else if(input$subset_look == "JTK_CYCLE"){
           output$text <- renderPrint({
-            summary(total_results[circ_jtk,input$coeff])
+            summary(tr_sub[circ_jtk,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[circ_jtk,], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[circ_jtk,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1162,10 +1174,10 @@ server <- function(input,output){ # aka the code behind the results
         }
         else if(input$subset_look == "ECHO"){
           output$text <- renderPrint({
-            summary(total_results[circ_us,input$coeff])
+            summary(tr_sub[circ_us,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[circ_us,], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[circ_us,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1173,21 +1185,21 @@ server <- function(input,output){ # aka the code behind the results
         }
         else if(input$subset_look == "Damped"){
           output$text <- renderPrint({
-            summary(total_results[damped,input$coeff])
+            summary(tr_sub[damped,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[damped,], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[damped,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
           
         }
-        else if(input$subset_look == "Driven"){
+        else if(input$subset_look == "Forced"){
           output$text <- renderPrint({
-            summary(total_results[driven,input$coeff])
+            summary(tr_sub[forced,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[driven,], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[forced,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1195,10 +1207,10 @@ server <- function(input,output){ # aka the code behind the results
         }
         else if(input$subset_look == "Harmonic"){
           output$text <- renderPrint({
-            summary(total_results[harmonic,input$coeff])
+            summary(tr_sub[harmonic,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[harmonic,], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[harmonic,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1206,10 +1218,10 @@ server <- function(input,output){ # aka the code behind the results
         }
         else if(input$subset_look == "Overexpressed"){
           output$text <- renderPrint({
-            summary(total_results[overexpressed,input$coeff])
+            summary(tr_sub[overexpressed,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[overexpressed,], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[overexpressed,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1217,10 +1229,10 @@ server <- function(input,output){ # aka the code behind the results
         }
         else if(input$subset_look == "Repressed"){
           output$text <- renderPrint({
-            summary(total_results[repressed,input$coeff])
+            summary(tr_sub[repressed,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[repressed,], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[repressed,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1228,30 +1240,30 @@ server <- function(input,output){ # aka the code behind the results
         }
         else if(input$subset_look == "Nonconverged"){
           output$text <- renderPrint({
-            summary(total_results[nonconv,input$coeff])
+            summary(tr_sub[nonconv,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[nonconv & !is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[nonconv & !is.na(tr_sub$Amplitude.Change.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
         }
         else if(input$subset_look == "Nonstarter"){
           output$text <- renderPrint({
-            summary(total_results[nas_found-nodev,input$coeff])
+            summary(tr_sub[nas_found-nodev,input$coeff])
           })
           
-          plot_viz<- ggplot(total_results[(nas_found-nodev) & !is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
+          plot_viz<- ggplot(tr_sub[(nas_found-nodev) & !is.na(tr_sub$Amplitude.Change.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
         }
         else if(input$subset_look == "No Deviation"){
           output$text <- renderPrint({
-            summary(total_results[nodev,input$coeff])
+            summary(tr_sub[nodev,input$coeff])
           })
           
-          ggplot(total_results[nodev & !is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
+          ggplot(tr_sub[nodev & !is.na(tr_sub$Amplitude.Change.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1259,40 +1271,40 @@ server <- function(input,output){ # aka the code behind the results
         }
         else if(input$subset_look == "Both ECHO and JTK"){
           output$text <- renderPrint({
-            summary(total_results[both,input$coeff])
+            summary(tr_sub[both,input$coeff])
           })
           
-          plot_viz<-  ggplot(total_results[both,], aes_string(ggname(input$coeff))) +
+          plot_viz<-  ggplot(tr_sub[both,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
         }
         else if(input$subset_look == "Only JTK"){
           output$text <- renderPrint({
-            summary(total_results[theirs,input$coeff])
+            summary(tr_sub[theirs,input$coeff])
           })
           
-          plot_viz<- ggplot(total_results[theirs & !is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
+          plot_viz<- ggplot(tr_sub[theirs & !is.na(tr_sub$Amplitude.Change.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
         }
         else if(input$subset_look == "Only ECHO"){
           output$text <- renderPrint({
-            summary(total_results[ours,input$coeff])
+            summary(tr_sub[ours,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[ours,], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[ours,], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
         }
         else if(input$subset_look == "Neither ECHO and JTK"){
           output$text <- renderPrint({
-            summary(total_results[diff,input$coeff])
+            summary(tr_sub[diff,input$coeff])
           })
           
-          plot_viz<-ggplot(total_results[diff & !is.na(total_results$Forcing.Coefficient),], aes_string(ggname(input$coeff))) +
+          plot_viz<-ggplot(tr_sub[diff & !is.na(tr_sub$Amplitude.Change.Coefficient),], aes_string(ggname(input$coeff))) +
             geom_density()+
             ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
             theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
@@ -1313,7 +1325,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("No Deviation (constant):",sum(nodev,na.rm=TRUE),"\n"))
           cat(paste("Circadian (ECHO):", sum(circ_us),"\n"))
           cat(paste("  Damped:", sum(damped & circ_us,na.rm=TRUE),"\n"))
-          cat(paste("  Driven:", sum(driven & circ_us,na.rm=TRUE),"\n"))
+          cat(paste("  Forced:", sum(forced & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Harmonic:", sum(harmonic & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Overexpressed:", sum(overexpressed & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Repressed:", sum(repressed & circ_us,na.rm=TRUE),"\n"))
@@ -1322,6 +1334,7 @@ server <- function(input,output){ # aka the code behind the results
           cat("\n")
           cat("User Inputs:\n")
           cat(paste("ECHO End Date and Time: ",user_input$ECHO_end_date,"\n"))
+          cat(paste("File Name: ",user_input$file_name,"\n"))
           cat(paste("Begin: ",user_input$begin,"\n"))
           cat(paste("End: ",user_input$end,"\n"))
           cat(paste("Resolution: ",user_input$resol,"\n"))
@@ -1331,6 +1344,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Paired Replicates: ",user_input$tied,"\n"))
           cat(paste("Smoothing?: ",user_input$is_smooth,"\n"))
           cat(paste("Remove unexpressed genes?: ",user_input$rem_unexpr,"\n"))
+          cat(paste("Remove unexpressed genes, cutoff: ",user_input$rem_unexpr_amt_below,"\n"))
           cat(paste("Remove unexpressed genes, percentage: ",user_input$rem_unexpr_amt,"\n"))
           cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
           cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
@@ -1347,7 +1361,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("No Deviation (constant):",sum(nodev,na.rm=TRUE),"\n"))
           cat(paste("Circadian (ECHO):", sum(circ_us),"\n"))
           cat(paste("  Damped:", sum(damped & circ_us,na.rm=TRUE),"\n"))
-          cat(paste("  Driven:", sum(driven & circ_us,na.rm=TRUE),"\n"))
+          cat(paste("  Forced:", sum(forced & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Harmonic:", sum(harmonic & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Overexpressed:", sum(overexpressed & circ_us,na.rm=TRUE),"\n"))
           cat(paste("  Repressed:", sum(repressed & circ_us,na.rm=TRUE),"\n"))
@@ -1366,6 +1380,7 @@ server <- function(input,output){ # aka the code behind the results
           cat("\n")
           cat("User Inputs:\n")
           cat(paste("ECHO End Date and Time: ",user_input$ECHO_end_date,"\n"))
+          cat(paste("File Name: ",user_input$file_name,"\n"))
           cat(paste("Begin: ",user_input$begin,"\n"))
           cat(paste("End: ",user_input$end,"\n"))
           cat(paste("Resolution: ",user_input$resol,"\n"))
@@ -1375,6 +1390,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Paired Replicates: ",user_input$tied,"\n"))
           cat(paste("Smoothing?: ",user_input$is_smooth,"\n"))
           cat(paste("Remove unexpressed genes?: ",user_input$rem_unexpr,"\n"))
+          cat(paste("Remove unexpressed genes, cutoff: ",user_input$rem_unexpr_amt_below,"\n"))
           cat(paste("Remove unexpressed genes, percentage: ",user_input$rem_unexpr_amt,"\n"))
           cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
           cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
@@ -1399,80 +1415,78 @@ server <- function(input,output){ # aka the code behind the results
           "N/A"
         })
         plot_viz<-ggplot()
-        total_results_na <- data.frame()
+        tr_sub_na <- data.frame()
       }
       else if(input$heat_subset_look == "None"){
-        total_results_na <-  total_results[!is.na(total_results$Amplitude),]; # filter out the rows where the paremeters are NA
+        tr_sub_na <-  tr_sub[!is.na(tr_sub$Initial.Amplitude),]; # filter out the rows where the paremeters are NA
         
       }
       else if(input$heat_subset_look == "JTK_CYCLE"){
-        total_results_na <-  total_results[circ_jtk,]; # filter out the rows where the paremeters are NA
+        tr_sub_na <-  tr_sub[circ_jtk,]; # filter out the rows where the paremeters are NA
       }
       else if(input$heat_subset_look == "ECHO"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[circ_us,]; 
-        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        tr_sub_na <-  tr_sub[circ_us,]; 
+        tr_sub_na <- tr_sub_na[!is.na(tr_sub_na$Initial.Amplitude),] 
         
       }
       else if(input$heat_subset_look == "Damped"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[damped,]; 
-        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        tr_sub_na <-  tr_sub[damped,]; 
+        tr_sub_na <- tr_sub_na[!is.na(tr_sub_na$Initial.Amplitude),] 
         
       }
-      else if(input$heat_subset_look == "Driven"){
+      else if(input$heat_subset_look == "Forced"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[driven,]; 
-        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        tr_sub_na <-  tr_sub[forced,]; 
+        tr_sub_na <- tr_sub_na[!is.na(tr_sub_na$Initial.Amplitude),] 
       }
       else if(input$heat_subset_look == "Harmonic"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[harmonic,]; 
-        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        tr_sub_na <-  tr_sub[harmonic,]; 
+        tr_sub_na <- tr_sub_na[!is.na(tr_sub_na$Initial.Amplitude),] 
       }
       else if(input$heat_subset_look == "Overexpressed"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[overexpressed,]; 
-        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        tr_sub_na <-  tr_sub[overexpressed,]; 
+        tr_sub_na <- tr_sub_na[!is.na(tr_sub_na$Initial.Amplitude),] 
       }
       else if(input$heat_subset_look == "Repressed"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[repressed,]; 
-        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        tr_sub_na <-  tr_sub[repressed,]; 
+        tr_sub_na <- tr_sub_na[!is.na(tr_sub_na$Initial.Amplitude),] 
       }
       else if(input$heat_subset_look == "Both ECHO and JTK"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[both,]; 
-        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        tr_sub_na <-  tr_sub[both,]; 
+        tr_sub_na <- tr_sub_na[!is.na(tr_sub_na$Initial.Amplitude),] 
       }
       else if(input$heat_subset_look == "Only JTK"){
-        total_results_na <-  total_results[theirs,]; # filter out the rows where the paremeters are NA
+        tr_sub_na <-  tr_sub[theirs,]; # filter out the rows where the paremeters are NA
       }
       else if(input$heat_subset_look == "Only ECHO"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[ours,]; 
-        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        tr_sub_na <-  tr_sub[ours,]; 
+        tr_sub_na <- tr_sub_na[!is.na(tr_sub_na$Initial.Amplitude),] 
       }
       else if(input$heat_subset_look == "Neither ECHO and JTK"){
         # filter out the rows where the paremeters are NA and our characteristic
-        total_results_na <-  total_results[diff,]; 
-        total_results_na <- total_results_na[!is.na(total_results_na$Amplitude),] 
+        tr_sub_na <-  tr_sub[diff,]; 
+        tr_sub_na <- tr_sub_na[!is.na(tr_sub_na$Initial.Amplitude),] 
       }
-      #total_results_na <-  total_results[!is.na(total_results$Amplitude),]; # filter out the rows where the paremeters are NA
       
       # don't let it output if jtk requested without JTK_results
       if (!(!is_jtk && (input$heat_subset_look == "JTK" || input$heat_subset_look == "Both ECHO and JTK" || input$heat_subset_look == "Only JTK" || input$heat_subset_look == "Only ECHO" || input$heat_subset_look == "Neither ECHO and JTK"))){
         
         if (input$heat_subset_look != "JTK_CYCLE" & input$heat_subset_look != "Only JTK"){
-          phase <- total_results_na$`Phase Shift`
-          amp <- total_results_na$Amplitude
+          phase <- tr_sub_na$`Phase Shift`
+          amp <- tr_sub_na$Initial.Amplitude
           
           #loop through every row in replace negative amplitudes with positive ones
           # adjust the phase shift accordingly
           for (i in 1:length(phase)) {
             if(amp[i]<0){
               amp[i] <- -1*amp[i]
-              #total_results_na[i,16:(15+length(timen)*num_reps)] <- -1*total_results_na[i,16:(15+length(timen)*num_reps)]
               phase[i] <- phase[i]+pi
             }
             if(phase[i]>2*pi){
@@ -1495,7 +1509,7 @@ server <- function(input,output){ # aka the code behind the results
         
         
         #get matrix of just the relative expression over time
-        hm_mat <- as.matrix(total_results_na[,16:(15+length(timen)*num_reps)])
+        hm_mat <- as.matrix(tr_sub_na[,17:(16+length(timen)*num_reps)])
         
         if (input$heat_subset_rep == "all"){ # make an average of replicates
           #if there are replicates, average the relative expression for each replicate
@@ -1528,16 +1542,9 @@ server <- function(input,output){ # aka the code behind the results
         
         #normalize each row to be between -1 and 1
         for (i in 1:length(phase)){
-          # gene_mean <-mean(as.matrix(hm_mat[i,]),na.rm=TRUE)
-          # for (j in 1:length(timen)){
-          #   hm_mat[i,j] <- (hm_mat[i,j]-gene_mean)
-          # }
           
           gene_max <- max(abs((hm_mat[i,])),na.rm = TRUE)
           hm_mat[i,] <- hm_mat[i,]/gene_max 
-          # for (j in 1:length(timen)){
-          #   hm_mat[i,j] <- (hm_mat[i,j]/gene_max)
-          # }
         }
         
         #sort by phase shift

@@ -1,12 +1,12 @@
 # Extended Oscillations Function Source
 # By Hannah De los Santos
-# ECHO v 2.0
+# ECHO v 2.1
 # Code description: Contains all the funcitons for extended harmonic oscillator work, in order to have less confusion between scripts.
 
 # function to represent damped oscillator with phase and equilibrium shift formula
 # inputs:
 #  a: Amplitude
-#  gam: Forcing.Coefficient (amount of damping/driving)
+#  gam: Amplitude.Change.Coefficient (amount of damping/driving)
 #  omega: Radial frequency
 #  phi: Phase Shift (radians)
 #  y_shift: Equilibrium shift
@@ -423,7 +423,7 @@ calc_tau_and_p_jtk <- function(ref_waveform,times,num_reps,current_gene,jtklist)
 #   conv: did the fit converge, or descriptor of type of data (constant, unexpressed, etc.)
 #   iter: number of iterations
 #   gamma: forcing coefficient value for fit
-#   type_gam: Type of oscillation (damped, driven, etc.)
+#   type_gam: Type of oscillation (damped, forced, etc.)
 #   amplitude: Amplitude value for fit
 #   omega: Radial frequency for fit
 #   period: Period for fit (in time units)
@@ -435,15 +435,6 @@ calc_tau_and_p_jtk <- function(ref_waveform,times,num_reps,current_gene,jtklist)
 #   original.values: original values for gene
 #   fitted.values: fitted values for gene
 calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,rem_unexpr_amt=70,jtklist=list()){
-
-  # if(is_smooth){ # smooth the data, if requested
-  #   if (tied){ # if paired replicates
-  #     genes[current_gene,] <- smoothing_tied(current_gene, is_weighted, num_reps)
-  #   }
-  #   else{ # if unpaired replicates
-  #     genes[current_gene,] <- smoothing_untied(current_gene, is_weighted, num_reps)
-  #   }
-  # }
 
   gene_n <- as.character(genes[current_gene,1]) # gene name
   # first we need to check whether or not the gene is just a straight line
@@ -460,7 +451,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     }
   }
 
-  # then we need to check if 70% are expressed (if desired)
+  # then we need to check if < threshold % are expressed (if desired)
   if (rem_unexpr){
     if (rem_unexpr_vect[current_gene]){
       if (num_reps == 1){ # one replicate
@@ -817,11 +808,11 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     phi <- parameters[4]
     y_shift <- parameters[5]
 
-    # calculating whether (over)damped, (over)driven, harmonic
+    # calculating whether (over)damped, (over)forced, harmonic
     if (gam < -.15){
       type_gam <- "Overexpressed"
     } else if (gam <= -.01){
-      type_gam <- "Driven"
+      type_gam <- "Forced"
     } else if (gam <= .01){
       type_gam <- "Harmonic"
     } else if (gam <= .15){
@@ -924,18 +915,18 @@ is_deviating_all <- function(){
   return (all_row_stdev != 0)
 }
 
-# function for determining whether gene values are unexpressed (less than 70% expressed (i.e., not 0)) for full matrix
+# function for determining whether gene values are unexpressed (less than 70% expressed (i.e., below specified cutoff)) for full matrix
 # inputs:
-#  current_gene: row number of current gene we want to calculate parameters for
-# outputs:
+#  rem_unexpr_amt: what percentage of the time course must be expressed
+#  rem_unexpr_amt_below: cutoff for expression
 #  boolean if there is 70% expression
-genes_unexpressed_all <- function(rem_unexpr_amt){
+genes_unexpressed_all <- function(rem_unexpr_amt, rem_unexpr_amt_below){
   #get matrix of just the relative expression over time
   all_reps <- as.matrix(genes[,2:ncol(genes)])
   # get how many genes are expressed for each gene
-  tot_expressed <- rowSums(all_reps != 0,na.rm = TRUE)
+  tot_expressed <- rowSums(abs(all_reps) > abs(rem_unexpr_amt_below),na.rm = TRUE)
 
-  # return false if amount is less than threshold
+  # return true if amount is less than threshold
   return(tot_expressed <= (ncol(all_reps)*rem_unexpr_amt))
 }
 
@@ -946,7 +937,11 @@ genes_unexpressed_all <- function(rem_unexpr_amt){
 # outputs:
 #  boolean if there is deviation within the gene values
 is_deviating <- function(current_gene){
-  stdev <- sd(genes[current_gene,-1], na.rm = TRUE)
+  if (all(is.na(genes[current_gene,-1])) | sum(!is.na(genes[current_gene,-1]))==1){
+    stdev <- 0
+  } else {
+    stdev <- sd(genes[current_gene,-1], na.rm = TRUE)
+  }
   return (stdev != 0)
 }
 
@@ -1035,8 +1030,8 @@ smoothing_all_tied <- function(is_weighted, num_reps){
     center_reps[[i]] <- left + center_reps[[i]] + right
 
     # figure out how many replicates are actually available for each time point
-    left_na <- cbind(matrix(0,nrow(all_reps),1),mtx_count[[i]][,-ncol(mtx_count[[i]])]) # left shifted matrix
-    right_na <- cbind(mtx_count[[i]][,-1],matrix(0,nrow(genes),1)) # right shifted matrix
+    left_na <- cbind(matrix(0,nrow(all_reps),1),mtx_count[[i]][,-ncol(mtx_count[[i]])]/2) # left shifted matrix
+    right_na <- cbind(mtx_count[[i]][,-1]/2,matrix(0,nrow(genes),1)) # right shifted matrix
     repmtx_l[[i]] <- repmtx - left_na - mtx_count[[i]] - right_na
     # to avoid division by 0 and induce NAs if there are no time points available
     repmtx_l[[i]][repmtx_l[[i]]==0] <- NA
@@ -1274,6 +1269,8 @@ de_linear_trend_all <- function(timen,num_reps,tied){
 
     # x values for linear fit
     xmtx <- matrix(rep(timen,each=nrow(all_rep)),nrow = nrow(all_rep))
+    # preallocating to store slopes
+    beta.df <- data.frame(matrix(NA, nrow(genes), num_reps))
     for (i in 1:num_reps){
       each_rep <- all_rep[,seq(i,ncol(all_rep),by=num_reps)]
 
@@ -1282,15 +1279,20 @@ de_linear_trend_all <- function(timen,num_reps,tied){
       # variance
       var <- rowSums((xmtx - rowMeans(xmtx))^2,na.rm = TRUE)
 
-      beta <- cov/var
+      beta.df[,i] <- beta <- cov/var
       alph <- rowMeans(each_rep,na.rm = TRUE)-(beta*rowMeans(xmtx))
 
       df[,seq(i,ncol(all_rep),by=num_reps)] <- each_rep -(alph+(beta*xmtx)) # linear fit
     }
+    # get average slope for each gene
+    beta <- rowMeans(beta.df, na.rm = T)
   }
   # get the data frame correctly set up for returning
   res_df <- genes
   res_df[,-1] <- df
-
-  return (res_df)
+  
+  # now we return the slope and the altered expressions
+  res_list <- list("res_df" = res_df, "beta" = beta)
+  
+  return (res_list)
 }
