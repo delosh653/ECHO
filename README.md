@@ -124,7 +124,7 @@ Warning in read.table(file = file, header = header, sep = sep, quote = quote,  :
 
 Warning: Error in +: non-conformable arrays
   76: avg_all_rep [damped_oscillator_master.R#157]
-  72: observeEventHandler [/Users/allenc/Desktop/ECHO-master/ECHO Shiny App/app.R#442]
+  72: observeEventHandler [/Users/delosh/Desktop/ECHO-master/ECHO Shiny App/app.R#442]
 ```
 
 **A:** Double check that your data is actually a .csv, i.e. actually comma-delimited. Just because it has ".csv" as a file extension may not necessarily mean that it's comma-delimited! You can check this by opening your file in a text editor, such as Notepad. If your data is comma-delimited, you should see commas between your entries. If it is not, you may see spaces or tabs. In this case, please save your data as a proper comma-delimited file.
