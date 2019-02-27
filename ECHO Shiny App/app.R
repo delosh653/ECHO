@@ -110,6 +110,12 @@ ui <- fluidPage(
                  uiOutput("Help_limit"),
                  
                  div(style="display: inline-block;",
+                     checkboxInput("run_conf", "Compute confidence intervals?", value = FALSE, width = NULL)),
+                 div(style="display: inline-block; vertical-align:top;  width: 20px;",
+                     actionButton("conf_help", icon("question", lib="font-awesome"))),tags$br(),
+                 uiOutput("Help_conf"),
+                 
+                 div(style="display: inline-block;",
                      checkboxInput("smooth", "Smooth data?", value = FALSE, width = NULL)),
                  div(style="display: inline-block; vertical-align:top;  width: 20px;",
                      actionButton("smooth_help", icon("question", lib="font-awesome"))),
@@ -137,6 +143,19 @@ ui <- fluidPage(
                      actionButton("de_linear_trend_help", icon("question", lib="font-awesome"))),tags$br(),
                  uiOutput("Help_de_linear_trend"),
                  
+                 div(class="header", checked=NA,
+                     tags$b("Set cutoffs to:")),
+                 
+                 div(style="display: inline-block; width: 80px;",
+                     textInput("over_cut", "OE/RE Cut", value = "0.15")),
+                 
+                 div(style="display: inline-block; width: 80px;",
+                     textInput("harm_cut", "HA Cut", value = "0.03")),
+                 
+                 div(style="display: inline-block; vertical-align:top;  width: 20px;",
+                     actionButton("cut_help", icon("question", lib="font-awesome"))),
+                 uiOutput("Help_cut"),
+                 
                  checkboxInput("run_jtk", "Run JTK_CYCLE as well?", value = FALSE, width = NULL),
                  
                  # action buttons for running echo code and downloading results
@@ -147,84 +166,85 @@ ui <- fluidPage(
                  downloadButton("downloadRData", "Download RData")
                )
                ,
+               # instruct echo ----
                mainPanel(tabsetPanel(
                  # picture
                  # instructions
                  tabPanel("About Finding Rhythms",fluidRow(verbatimTextOutput("finish"),
-                   tags$div(class="header", checked = NA,
-                            list(
-                              HTML('<center><img src="wc1_Neurospora_Replicates_Unsmoothed.PNG" style="width:500px"></center><br>'),
-                              tags$p(tags$b("  Welcome to ECHO!")),
-                              tags$p("ECHO (Extended Circadian Harmonic Oscillations) is an app designed to find and identify circadian rhythms from your data.
-                                     Just upload a .csv of your data and enter its parameters to get started.
-                                     For explanations for what specific terms mean, click the '?' buttons to their right.
-                                     Recommendations are also made in the '?' text.
-                                     Please note: in order to download results, you must open this app in the browser
-                                     window before starting to run."),
-                              tags$p("If you'd just like to try this out or get a good idea of what data format is necessary,
-                                     just check 'Run Example'. This will run the example .csv that came with your download of
-                                     ECHO. This example data is fabricated expression data from 2 to 48 hours with 2 hour
-                                     resolution and 3 replicates. Random missing data is also included."),
-                              tags$p("When you run your data, a progress bar will display in the bottom left corner showing the stage of progress (ECHO, JTK_CYCLE (if run), finish). For ECHO, another progress bar will display in the console window to show directly how far one is in the ECHO progress. Upon finishing, the results will display above. You can then download the ECHO results (.csv), 
-                                     the results for use in the visualization tab (.RData), and the JTK_CYCLE results 
-                                     (.csv) (if run)."),
-                              tags$p(HTML("If you are using the results from this app or want to learn about its methods, please <a href='https://dl.acm.org/citation.cfm?id=3107420&CFID=826084181&CFTOKEN=52238765'>cite us</a>. Additionally, if you are using JTK_CYCLE results, please <a href='https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3119870/'>cite them</a>.")),
-                              ("If you run into any errors, please email delosh@rpi.edu with the following (subject 
-                               line: ECHO Error):"),tags$br(),
-                              "- a short desciption of your problem" ,tags$br(),
-                              "- ECHO version number",tags$br(),
-                              "- your dataset/file(s)",tags$br(),
-                              "- your exact settings for the run (a screenshot will do)",tags$br(),
-                              "- your exact error from the console window (a screenshot will do)",tags$br(),tags$br(),
-                              "All images created by ECHO using data from:",tags$br(),
-                              "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
-                              tags$br(),tags$br(),
-                              tags$p("ECHO Version 2.1")
-                              ))
-                              )),
+                                                           tags$div(class="header", checked = NA,
+                                                                    list(
+                                                                      HTML('<center><img src="wc1_Neurospora_Replicates_Unsmoothed.PNG" style="width:500px"></center><br>'),
+                                                                      tags$p(tags$b("  Welcome to ECHO!")),
+                                                                      tags$p("ECHO (Extended Circadian Harmonic Oscillations) is an app designed to find and identify circadian rhythms from your data.
+                                                                             Just upload a .csv of your data and enter its parameters to get started.
+                                                                             For explanations for what specific terms mean, click the '?' buttons to their right.
+                                                                             Recommendations are also made in the '?' text.
+                                                                             Please note: in order to download results, you must open this app in the browser
+                                                                             window before starting to run."),
+                                                                      tags$p("If you'd just like to try this out or get a good idea of what data format is necessary,
+                                                                             just check 'Run Example'. This will run the example .csv that came with your download of
+                                                                             ECHO. This example data is fabricated expression data from 2 to 48 hours with 2 hour
+                                                                             resolution and 3 replicates. Random missing data is also included."),
+                                                                      tags$p("When you run your data, a progress bar will display in the bottom left corner showing the stage of progress (ECHO, JTK_CYCLE (if run), finish). For ECHO, another progress bar will display in the console window to show directly how far one is in the ECHO progress. Upon finishing, the results will display above. You can then download the ECHO results (.csv), 
+                                                                             the results for use in the visualization tab (.RData), and the JTK_CYCLE results 
+                                                                             (.csv) (if run)."),
+                                                                      tags$p(HTML("If you are using the results from this app or want to learn about its methods, please <a href='https://dl.acm.org/citation.cfm?id=3107420&CFID=826084181&CFTOKEN=52238765'>cite us</a>. Additionally, if you are using JTK_CYCLE results, please <a href='https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3119870/'>cite them</a>.")),
+                                                                      ("If you run into any errors, please email delosh@rpi.edu with the following (subject 
+                                                                       line: ECHO Error):"),tags$br(),
+                                                                      "- a short desciption of your problem" ,tags$br(),
+                                                                      "- ECHO version number",tags$br(),
+                                                                      "- your dataset/file(s)",tags$br(),
+                                                                      "- your exact settings for the run (a screenshot will do)",tags$br(),
+                                                                      "- your exact error from the console window (a screenshot will do)",tags$br(),tags$br(),
+                                                                      "All images created by ECHO using data from:",tags$br(),
+                                                                      "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
+                                                                      tags$br(),tags$br(),
+                                                                      tags$p("ECHO Version 3.0")
+                                                                      ))
+                                                                      )),
                  
                  tabPanel("Interpreting Your Result Files",
                           tags$div(class="header",checked=NA,
                                    list(tags$p("Once you run ECHO (and possibly JTK_CYCLE), there are three results files that you have the possibility of downloading: and ECHO CSV, a JTK_CYCLE CSV, and an .RData file. Below, you can find an explanation of the contents of each of the CSV file. If a column has an asterisk next to it, you can check our published paper for more in-depth information."),
                                         
-                                     ("ECHO CSV has the following columns:"),tags$br(),
-                                     ("- Gene Name: The name of each expression, as entered in the original data file."),tags$br(),
-                                     ("- Convergence: Whether or not ECHO's fitting method converged for each expression. This column will also contain markers for 'No Deviation', which means a constant gene, or 'Unexpressed', if removing unexpressed genes was selected during the run."),tags$br(),
-                                     ("- Iterations: Amount of iterations for ECHO's fitting method."),tags$br(),
-                                     ("- Amplitude.Change.Coefficient*: Parameter which states the amount of amplitude change over time in the system."),tags$br(),
-                                     ("- Oscillation Type*: States the expression's category based on forcing coefficient (forced, damped, harmonic, overexpressed, repressed)."),tags$br(),
-                                     ("- Initial.Amplitude*: Parameter describing initial amplitude of expression."),tags$br(),
-                                     ("- Radian.Frequency*: Parameter describing frequency of oscillations, in radians."),tags$br(),
-                                     ("- Period*: States the time for one complete oscillation, assumed to be in hours."),tags$br(),
-                                     ("- Phase Shift*: Parameter describing the amount the oscillator is shifted, in radians."),tags$br(),
-                                     ("- Hours Shifted: Desribes the amount the oscillator is shifted in hours, calculated from phase shift and fitted period. This is the time of the first peak of the oscillation, relative to starting time."),tags$br(),
-                                     ("- Equilibrium Value*: Parameter describing the center of the oscillator, i.e. the line the expression oscillates around."),tags$br(),
-                                     ("- Tau*: Calculated to determine p-values using Kendall's Tau."),tags$br(),
-                                     ("- P-Value*: Significance of ECHO fit, unadjusted."),tags$br(),
-                                     ("- BH Adj P-Value*: Significance of ECHO fit, adjusted using the Benjamini-Hochberg criterion. Corrects for multiple hypothesis testing."),tags$br(),
-                                     ("- BY Adj P-Value*: Significance of ECHO fit, adjusted using the Benhamini-Yekutieli criterion (more stringent). Corrects for multiple hypothesis testing."),tags$br(),
-                                     ("- Original TPX.R: Your original data for time point (TP) X, and replicate R."),tags$br(),
-                                     ("- Fitted TPX.R: ECHO's fitted data for time point (TP) X, and replicate R."),tags$br(),tags$br(),
-                                     
-                                     ("JTK_CYCLE CSV has the following columns:"),tags$br(),
-                                     ("- Gene Name: The name of each expression, as entered in the original data file."),tags$br(),
-                                     ("- BY.Q: Significance of JTK fit (ADJ.P), adjusted using the Benhamini-Yekutieli criterion (more stringent). Corrects for multiple hypothesis testing."),tags$br(),
-                                     ("- BH.Q: Significance of JTK fit (ADJ.P), adjusted using the Benjamini-Hochberg criterion. Corrects for multiple hypothesis testing."),tags$br(),
-                                     ("- ADJ.P: Significance of JTK fit, adjusted internally."),tags$br(),
-                                     ("- PER: Period of one complete oscillation."),tags$br(),
-                                     ("- LAG: Hours delayed for expression."),tags$br(),
-                                     ("- AMP: Amplitude."),tags$br(),
-                                     ("- Original data, complete with original names, then follows."),tags$br(),tags$br(),
-                                     
-                                     tags$p("The .RData file contains a series of R objects that are necessary for the automatic visualizations on the next tab. These objects include the ECHO and JTK output and user input information.")
+                                        ("ECHO CSV has the following columns:"),tags$br(),
+                                        ("- Gene Name: The name of each expression, as entered in the original data file."),tags$br(),
+                                        ("- Convergence: Whether or not ECHO's fitting method converged for each expression. This column will also contain markers for 'No Deviation', which means a constant gene, or 'Unexpressed', if removing unexpressed genes was selected during the run."),tags$br(),
+                                        ("- Iterations: Amount of iterations for ECHO's fitting method."),tags$br(),
+                                        ("- Amplitude.Change.Coefficient*: Parameter which states the amount of amplitude change over time in the system."),tags$br(),
+                                        ("- Oscillation Type*: States the expression's category based on forcing coefficient (forced, damped, harmonic, overexpressed, repressed)."),tags$br(),
+                                        ("- Initial.Amplitude*: Parameter describing initial amplitude of expression."),tags$br(),
+                                        ("- Radian.Frequency*: Parameter describing frequency of oscillations, in radians."),tags$br(),
+                                        ("- Period*: States the time for one complete oscillation, assumed to be in hours."),tags$br(),
+                                        ("- Phase Shift*: Parameter describing the amount the oscillator is shifted, in radians."),tags$br(),
+                                        ("- Hours Shifted: Desribes the amount the oscillator is shifted in hours, calculated from phase shift and fitted period. This is the time of the first peak of the oscillation, relative to starting time."),tags$br(),
+                                        ("- Equilibrium Value*: Parameter describing the center of the oscillator, i.e. the line the expression oscillates around."),tags$br(),
+                                        ("- Tau*: Calculated to determine p-values using Kendall's Tau."),tags$br(),
+                                        ("- P-Value*: Significance of ECHO fit, unadjusted."),tags$br(),
+                                        ("- BH Adj P-Value*: Significance of ECHO fit, adjusted using the Benjamini-Hochberg criterion. Corrects for multiple hypothesis testing."),tags$br(),
+                                        ("- BY Adj P-Value*: Significance of ECHO fit, adjusted using the Benhamini-Yekutieli criterion (more stringent). Corrects for multiple hypothesis testing."),tags$br(),
+                                        ("- Original TPX.R: Your original data for time point (TP) X, and replicate R."),tags$br(),
+                                        ("- Fitted TPX.R: ECHO's fitted data for time point (TP) X, and replicate R."),tags$br(),tags$br(),
+                                        
+                                        ("JTK_CYCLE CSV has the following columns:"),tags$br(),
+                                        ("- Gene Name: The name of each expression, as entered in the original data file."),tags$br(),
+                                        ("- BY.Q: Significance of JTK fit (ADJ.P), adjusted using the Benhamini-Yekutieli criterion (more stringent). Corrects for multiple hypothesis testing."),tags$br(),
+                                        ("- BH.Q: Significance of JTK fit (ADJ.P), adjusted using the Benjamini-Hochberg criterion. Corrects for multiple hypothesis testing."),tags$br(),
+                                        ("- ADJ.P: Significance of JTK fit, adjusted internally."),tags$br(),
+                                        ("- PER: Period of one complete oscillation."),tags$br(),
+                                        ("- LAG: Hours delayed for expression."),tags$br(),
+                                        ("- AMP: Amplitude."),tags$br(),
+                                        ("- Original data, complete with original names, then follows."),tags$br(),tags$br(),
+                                        
+                                        tags$p("The .RData file contains a series of R objects that are necessary for the automatic visualizations on the next tab. These objects include the ECHO and JTK output and user input information.")
                                    )))
                  # tabPanel("Gene List")
                  #tabPanel("Gene Clustering",plotOutput("plot_genes", height = "650px")),
                  #tabPanel("Silhouette Plot",plotOutput("plot_sil", height = "650px"))
-                                     )
-                                     )
-                 )
+               )
+               )
              )
+               )
     ,
     # ui for visualization ----
     tabPanel("Visualization", fluid=TRUE, sidebarLayout(
@@ -331,12 +351,12 @@ ui <- fluidPage(
                                      Subset of Data to View."))
                               )
                               )
-        )
-      )
+                              )
+                              )
+                              )
+          ) 
     )
-    ) 
-    )
-)
+  )
 
 
 # Server ----
@@ -450,7 +470,22 @@ server <- function(input,output){ # aka the code behind the results
         return()
       }
     })
-    
+    output$Help_conf=renderUI({ # time inputs help
+      if(input$conf_help%%2){
+        helpText("Check if you would like 95% confidence intervals to be computed as well. Note: if checked, this will add time to computations.")
+      }
+      else{
+        return()
+      }
+    })
+    output$Help_cut=renderUI({ # time inputs help
+      if(input$cut_help%%2){
+        helpText("If you would like different than standard cutoffs for Overexpressed/Repressed (OE/RE) or Harmonic (HA) values, enter changes here. Since these are symmetric, these will be both positive and negative cutoffs. For example, defaults indicate that OE expressions are below -0.15, RE are above 0.15, and HA falls between -0.03 and 0.03. Damped and forced cutoffs fall between those values accordingly.")
+      }
+      else{
+        return()
+      }
+    })
     
     # run echo with maybe jtk ----
     observeEvent(input$find_rhythms, {
@@ -589,13 +624,17 @@ server <- function(input,output){ # aka the code behind the results
           high_end <- high_input
         }
         
+        run_conf <- input$run_conf
+        harm_cut <- abs(as.numeric(sapply(input$harm_cut, function(x) eval(parse(text=x)))))
+        over_cut <- abs(as.numeric(sapply(input$over_cut, function(x) eval(parse(text=x)))))
+        
         start.time <- Sys.time() # begin counting time
         
         # if more than one replicate or requested, an exact distribution is needed
         #if (num_reps > 1 ){ 
-          # create exact distribution for pvalues
-          jtklist <- jtkdist(length(timen), reps = num_reps) 
-          jtk.alt <- list() # preallocate pvalue distribution for missing data
+        # create exact distribution for pvalues
+        # jtklist <- jtkdist(length(timen), reps = num_reps) 
+        # jtk.alt <- list() # preallocate pvalue distribution for missing data
         #}
         
         # prepare for parallelism
@@ -615,15 +654,20 @@ server <- function(input,output){ # aka the code behind the results
         
         # where we put the result
         total_results <- foreach (i=1:nrow(genes), .combine = rbind, .packages='minpack.lm',.options.snow = opts) %dopar% {
-          calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, jtklist)
+          calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, harm_cut = harm_cut, over_cut = over_cut)
         }
         close(pb)
         
         stopCluster(cl) # stop using the clusters
         
         # renaming columns of the final results
-        colnames(total_results) <- c("Gene Name","Convergence","Iterations","Amplitude.Change.Coefficient","Oscillation Type","Initial.Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted","Equilibrium Value", "Tau", "P-Value", paste(rep("Original TP",length(rep(timen, each = num_reps))),rep(timen, each = num_reps),rep(".",length(rep(timen, each = num_reps))),rep(c(1:num_reps), length(timen)),sep=""), paste(rep("Fitted TP",length(timen)),timen,sep=""))
-        
+        if (!run_conf){
+          colnames(total_results) <- c("Gene Name","Convergence","Iterations","Amplitude.Change.Coefficient","Oscillation Type","Initial.Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted","Equilibrium Value", "Tau", "P-Value", paste(rep("Original TP",length(rep(timen, each = num_reps))),rep(timen, each = num_reps),rep(".",length(rep(timen, each = num_reps))),rep(c(1:num_reps), length(timen)),sep=""), paste(rep("Fitted TP",length(timen)),timen,sep=""))
+        } else {
+          conf_int_names <- c("CI.AC.Coeff","CI.Init.Amp","CI.Rad.Freq","CI.Phase.Shift","CI.Eq.Val")
+          conf_int_names <- c(paste0(conf_int_names,".Low"), paste0(conf_int_names,".High"))
+          colnames(total_results) <- c("Gene Name","Convergence","Iterations","Amplitude.Change.Coefficient","Oscillation Type","Initial.Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted","Equilibrium Value", "Tau", "P-Value", conf_int_names, paste(rep("Original TP",length(rep(timen, each = num_reps))),rep(timen, each = num_reps),rep(".",length(rep(timen, each = num_reps))),rep(c(1:num_reps), length(timen)),sep=""), paste(rep("Fitted TP",length(timen)),timen,sep=""))
+        }
         # remove the fake row I added if there is only one gene
         if (add_one){
           total_results <- total_results[-nrow(total_results),]
@@ -668,7 +712,10 @@ server <- function(input,output){ # aka the code behind the results
                             "is_normal"=input$is_normal,
                             "is_de_linear_trend"=input$is_de_linear_trend,
                             "run_jtk"=input$run_jtk,
-                            "v_num"=2.1) # VERSION NUMBER
+                            "run_conf"=input$run_conf,
+                            "harm_cut"=input$harm_cut,
+                            "over_cut"=input$over_cut,
+                            "v_num"=3.0) # VERSION NUMBER
         
         # jtk run -----
         
@@ -683,8 +730,15 @@ server <- function(input,output){ # aka the code behind the results
           start.time <- Sys.time() # begin counting time
           options(stringsAsFactors=FALSE)
           # if smoothed, the smoothed data appears in the total_results dataframe
+          
+          if (run_conf){
+            end_num <- 26
+          } else {
+            end_num <- 16
+          }
+          
           if(input$smooth){
-            data <- total_results[,c(17:(16+(length(timen)*num_reps)))]
+            data <- total_results[,c((end_num+1):(end_num+(length(timen)*num_reps)))]
             data <- cbind(genes[,1],data)
             colnames(data)[1] <- "Gene.Name"
           } else{ # otherwise, just use the inputted data
@@ -808,6 +862,11 @@ server <- function(input,output){ # aka the code behind the results
     # call upon user input
     is_jtk <- user_input$run_jtk
     
+    end_num <- 16
+    if (user_input$run_conf){
+      end_num <- 26
+    }
+    
     tr_sub <- total_results
     if (input$start_range != ""){
       tr_sub <- tr_sub[!is.na(tr_sub$Period),]
@@ -884,109 +943,109 @@ server <- function(input,output){ # aka the code behind the results
       }
       else if(input$subset_look == "None"){
         if (is_jtk){
-          df<-as.data.frame(cbind(tr_sub[,1:16],JTK_results[,2:4]))
+          df<-as.data.frame(cbind(tr_sub[,1:end_num],JTK_results[,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[,1:16])
+          df<-as.data.frame(tr_sub[,1:end_num])
         }
       }
       else if(input$subset_look == "JTK_CYCLE"){
         if(is_jtk){
-          df <-as.data.frame(cbind(tr_sub[circ_jtk,1:16],JTK_results[circ_jtk,2:4]))
+          df <-as.data.frame(cbind(tr_sub[circ_jtk,1:end_num],JTK_results[circ_jtk,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[circ_jtk,1:16])
+          df<-as.data.frame(tr_sub[circ_jtk,1:end_num])
         }
         
       }
       else if(input$subset_look == "ECHO"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[circ_us,1:16],JTK_results[circ_us,2:4]))
+          df<-as.data.frame(cbind(tr_sub[circ_us,1:end_num],JTK_results[circ_us,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[circ_us,1:16])
+          df<-as.data.frame(tr_sub[circ_us,1:end_num])
         }
       }
       else if(input$subset_look == "Damped"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[damped,1:16],JTK_results[damped,2:4]))
+          df<-as.data.frame(cbind(tr_sub[damped,1:end_num],JTK_results[damped,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[damped,1:16])
+          df<-as.data.frame(tr_sub[damped,1:end_num])
         }
       }
       else if(input$subset_look == "Forced"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[forced,1:16],JTK_results[forced,2:4]))
+          df<-as.data.frame(cbind(tr_sub[forced,1:end_num],JTK_results[forced,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[forced,1:16])
+          df<-as.data.frame(tr_sub[forced,1:end_num])
         }
       }
       else if(input$subset_look == "Harmonic"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[harmonic,1:16],JTK_results[harmonic,2:4]))
+          df<-as.data.frame(cbind(tr_sub[harmonic,1:end_num],JTK_results[harmonic,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[harmonic,1:16])
+          df<-as.data.frame(tr_sub[harmonic,1:end_num])
         }
       }
       else if(input$subset_look == "Repressed"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[repressed,1:16],JTK_results[repressed,2:4]))
+          df<-as.data.frame(cbind(tr_sub[repressed,1:end_num],JTK_results[repressed,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[repressed,1:16])
+          df<-as.data.frame(tr_sub[repressed,1:end_num])
         }
         
       }
       else if(input$subset_look == "Overexpressed"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[overexpressed,1:16],JTK_results[overexpressed,2:4]))
+          df<-as.data.frame(cbind(tr_sub[overexpressed,1:end_num],JTK_results[overexpressed,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[overexpressed,1:16])
+          df<-as.data.frame(tr_sub[overexpressed,1:end_num])
         }
       }
       else if(input$subset_look == "Nonconverged"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[nonconv,1:16],JTK_results[nonconv,2:4]))
+          df<-as.data.frame(cbind(tr_sub[nonconv,1:end_num],JTK_results[nonconv,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[nonconv,1:16])
+          df<-as.data.frame(tr_sub[nonconv,1:end_num])
         }
       }
       else if(input$subset_look == "Nonstarter"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[nas_found-nodev,1:16],JTK_results[nas_found-nodev,2:4]))
+          df<-as.data.frame(cbind(tr_sub[nas_found-nodev,1:end_num],JTK_results[nas_found-nodev,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[nas_found-nodev,1:16])
+          df<-as.data.frame(tr_sub[nas_found-nodev,1:end_num])
         }
       }
       else if(input$subset_look == "No Deviation"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[nodev,1:16],JTK_results[nodev,2:4]))
+          df<-as.data.frame(cbind(tr_sub[nodev,1:end_num],JTK_results[nodev,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[nodev,1:16])
+          df<-as.data.frame(tr_sub[nodev,1:end_num])
         }
       }
       else if(input$subset_look == "Both ECHO and JTK"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[both,1:16],JTK_results[both,2:4]))
+          df<-as.data.frame(cbind(tr_sub[both,1:end_num],JTK_results[both,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[both,1:16])
+          df<-as.data.frame(tr_sub[both,1:end_num])
         }
       }
       else if(input$subset_look == "Only JTK"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[theirs,1:16],JTK_results[theirs,2:4]))
+          df<-as.data.frame(cbind(tr_sub[theirs,1:end_num],JTK_results[theirs,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[theirs,1:16])
+          df<-as.data.frame(tr_sub[theirs,1:end_num])
         }
       }
       else if(input$subset_look == "Only ECHO"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[ours,1:16],JTK_results[ours,2:4]))
+          df<-as.data.frame(cbind(tr_sub[ours,1:end_num],JTK_results[ours,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[ours,1:16])
+          df<-as.data.frame(tr_sub[ours,1:end_num])
         }
       }
       else if(input$subset_look == "Neither ECHO and JTK"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[diff,1:16],JTK_results[diff,2:4]))
+          df<-as.data.frame(cbind(tr_sub[diff,1:end_num],JTK_results[diff,2:4]))
         } else {
-          df<-as.data.frame(tr_sub[diff,1:16])
+          df<-as.data.frame(tr_sub[diff,1:end_num])
         }
       }
       
@@ -1005,12 +1064,12 @@ server <- function(input,output){ # aka the code behind the results
     
     if (num_reps > 1){ # create a data frame for gene visualizations
       if(sum(tr_sub$`Gene Name`==input$gene_name)!=0){
-        rep_genes <- tr_sub[tr_sub$'Gene Name'==input$gene_name,17:(16+(length(timen)*num_reps))]
+        rep_genes <- tr_sub[tr_sub$'Gene Name'==input$gene_name,(end_num+1):(end_num+(length(timen)*num_reps))]
         
         ribbon.df <- data.frame(matrix(ncol = 4+num_reps, nrow = length(timen)))
         colnames(ribbon.df) <- c("Times","Fit","Min","Max", paste(rep("Rep",num_reps),c(1:num_reps), sep=".")) # assigning column names
         ribbon.df$Times <- timen
-        ribbon.df$Fit <- t(tr_sub[tr_sub$'Gene Name'==input$gene_name,c((17+(length(timen)*num_reps)):ncol(tr_sub))]) # assigning the fit
+        ribbon.df$Fit <- t(tr_sub[tr_sub$'Gene Name'==input$gene_name,c(((end_num+1)+(length(timen)*num_reps)):ncol(tr_sub))]) # assigning the fit
         ribbon.df$Min <- sapply(seq(1,ncol(rep_genes), by = num_reps), function(x) min(unlist(rep_genes[,c(x:(num_reps-1+x))]), na.rm = TRUE)) # getting min values of replicates
         ribbon.df$Max <- sapply(seq(1,ncol(rep_genes), by = num_reps), function(x) max(unlist(rep_genes[,c(x:(num_reps-1+x))]), na.rm = TRUE)) # getting max values of replicates
         for (i in 1:num_reps){ # assign each of the replicates
@@ -1052,8 +1111,8 @@ server <- function(input,output){ # aka the code behind the results
           # getting the total results: original and fitted values
           data.m <- data.frame(matrix(0,length(timen),3))
           colnames(data.m) <- c("Original","Fit","Times")
-          data.m$Original <- as.numeric(tr_sub[tr_sub$`Gene Name`==input$gene_name,c(17:(length(timen)+16))])
-          data.m$Fit <- as.numeric(tr_sub[tr_sub$`Gene Name`==input$gene_name,-c(1:(length(timen)+16))])
+          data.m$Original <- as.numeric(tr_sub[tr_sub$`Gene Name`==input$gene_name,c((end_num+1):(length(timen)+end_num))])
+          data.m$Fit <- as.numeric(tr_sub[tr_sub$`Gene Name`==input$gene_name,-c(1:(length(timen)+end_num))])
           data.m$Times <- timen
           
           # create gene expression plot
@@ -1348,6 +1407,9 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Remove unexpressed genes, percentage: ",user_input$rem_unexpr_amt,"\n"))
           cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
           cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
+          cat(paste("Run confidence intervals?: ",user_input$run_conf,"\n"))
+          cat(paste("Harmonic cutoff: ",user_input$harm_cut,"\n"))
+          cat(paste("Overexpressed/Repressed cutoff: ",user_input$over_cut,"\n"))
           cat(paste("Run JTK?: ",user_input$run_jtk,"\n"))
           cat(paste("ECHO Version No.: ",user_input$v_num,"\n"))
         })
@@ -1367,10 +1429,10 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("  Repressed:", sum(repressed & circ_us,na.rm=TRUE),"\n"))
           cat(paste("Circadian (JTK_CYCLE):", sum(circ_jtk),"\n"))
           cat("Confusion Matrix of Circadian Genes
-                                JTK_CYCLE
-                       yes                  no
+              JTK_CYCLE
+              yes                  no
               ECHO yes Both ECHO and JTK    Only ECHO
-                   no  Only JTK             Neither ECHO nor JTK\n")
+              no  Only JTK             Neither ECHO nor JTK\n")
           cat(paste("Both ECHO and JTK:",sum(both,na.rm=TRUE),"\n"))
           cat(paste("Only JTK:",sum(theirs,na.rm=TRUE),"\n"))
           cat(paste("Only ECHO:",sum(ours,na.rm=TRUE),"\n"))
@@ -1394,6 +1456,9 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Remove unexpressed genes, percentage: ",user_input$rem_unexpr_amt,"\n"))
           cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
           cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
+          cat(paste("Run confidence intervals?: ",user_input$run_conf,"\n"))
+          cat(paste("Harmonic cutoff: ",user_input$harm_cut,"\n"))
+          cat(paste("Overexpressed/Repressed cutoff: ",user_input$over_cut,"\n"))
           cat(paste("Run JTK?: ",user_input$run_jtk,"\n"))
           cat(paste("ECHO Version No.: ",user_input$v_num,"\n"))
         })
@@ -1509,7 +1574,7 @@ server <- function(input,output){ # aka the code behind the results
         
         
         #get matrix of just the relative expression over time
-        hm_mat <- as.matrix(tr_sub_na[,17:(16+length(timen)*num_reps)])
+        hm_mat <- as.matrix(tr_sub_na[,(end_num+1):(end_num+length(timen)*num_reps)])
         
         if (input$heat_subset_rep == "all"){ # make an average of replicates
           #if there are replicates, average the relative expression for each replicate
