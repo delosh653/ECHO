@@ -15,6 +15,7 @@ library(iterators)
 library(doSNOW)
 library(colorRamps)
 library(fields)
+library(nlstools)
 
 #https://stackoverflow.com/questions/3452086/getting-path-of-an-r-script/35842176#35842176
 # set working directory - only works in RStudio (with rstudioapi)
@@ -111,7 +112,9 @@ ui <- fluidPage(
                  
                  div(style="display: inline-block;",
                      checkboxInput("run_conf", "Compute confidence intervals?", value = FALSE, width = NULL)),
-                 div(style="display: inline-block; vertical-align:top;  width: 20px;",
+                 div(style="display: inline-block; width: 110px;",
+                     selectInput("which_conf", "Type?", c("Bootstrap", "Jackknife"), width = NULL)),
+                 div(style="display: inline-block; vertical-align:top;  width: 50px;",
                      actionButton("conf_help", icon("question", lib="font-awesome"))),tags$br(),
                  uiOutput("Help_conf"),
                  
@@ -199,7 +202,7 @@ ui <- fluidPage(
                                                                       "All images created by ECHO using data from:",tags$br(),
                                                                       "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                                                                       tags$br(),tags$br(),
-                                                                      tags$p("ECHO Version 3.0")
+                                                                      tags$p("ECHO Version 3.1")
                                                                       ))
                                                                       )),
                  
@@ -472,7 +475,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_conf=renderUI({ # time inputs help
       if(input$conf_help%%2){
-        helpText("Check if you would like 95% confidence intervals to be computed as well. Note: if checked, this will add time to computations.")
+        helpText("Check if you would like 95% confidence intervals to be computed as well, with a choice between bootstrapped and jackknifed computation. Jackknifing is recommended for small amounts of data points. Note: if checked, this will add time to computations.")
       }
       else{
         return()
@@ -625,6 +628,7 @@ server <- function(input,output){ # aka the code behind the results
         }
         
         run_conf <- input$run_conf
+        which_conf <- input$which_conf
         harm_cut <- abs(as.numeric(sapply(input$harm_cut, function(x) eval(parse(text=x)))))
         over_cut <- abs(as.numeric(sapply(input$over_cut, function(x) eval(parse(text=x)))))
         
@@ -654,7 +658,7 @@ server <- function(input,output){ # aka the code behind the results
         
         # where we put the result
         total_results <- foreach (i=1:nrow(genes), .combine = rbind, .packages='minpack.lm',.options.snow = opts) %dopar% {
-          calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, harm_cut = harm_cut, over_cut = over_cut)
+          calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut)
         }
         close(pb)
         
@@ -713,9 +717,10 @@ server <- function(input,output){ # aka the code behind the results
                             "is_de_linear_trend"=input$is_de_linear_trend,
                             "run_jtk"=input$run_jtk,
                             "run_conf"=input$run_conf,
+                            "which_conf"=input$which_conf,
                             "harm_cut"=input$harm_cut,
                             "over_cut"=input$over_cut,
-                            "v_num"=3.0) # VERSION NUMBER
+                            "v_num"=3.1) # VERSION NUMBER
         
         # jtk run -----
         
@@ -1408,6 +1413,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
           cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
           cat(paste("Run confidence intervals?: ",user_input$run_conf,"\n"))
+          cat(paste("What type?: ",user_input$which_conf,"\n"))
           cat(paste("Harmonic cutoff: ",user_input$harm_cut,"\n"))
           cat(paste("Overexpressed/Repressed cutoff: ",user_input$over_cut,"\n"))
           cat(paste("Run JTK?: ",user_input$run_jtk,"\n"))
@@ -1457,6 +1463,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
           cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
           cat(paste("Run confidence intervals?: ",user_input$run_conf,"\n"))
+          cat(paste("What type?: ",user_input$which_conf,"\n"))
           cat(paste("Harmonic cutoff: ",user_input$harm_cut,"\n"))
           cat(paste("Overexpressed/Repressed cutoff: ",user_input$over_cut,"\n"))
           cat(paste("Run JTK?: ",user_input$run_jtk,"\n"))
@@ -1603,13 +1610,16 @@ server <- function(input,output){ # aka the code behind the results
         # center rows around mean
         # vector of row means
         all_row_mean <- rowMeans(hm_mat, na.rm = TRUE)
+        # # all row stdev
+        # all_row_stdev <- sqrt(rowSums((hm_mat - rowMeans(hm_mat,na.rm = TRUE))^2, na.rm = TRUE)/(dim(hm_mat)[2] - 1))
+        # center heat map
         hm_mat <- hm_mat - all_row_mean
         
         #normalize each row to be between -1 and 1
         for (i in 1:length(phase)){
-          
+
           gene_max <- max(abs((hm_mat[i,])),na.rm = TRUE)
-          hm_mat[i,] <- hm_mat[i,]/gene_max 
+          hm_mat[i,] <- hm_mat[i,]/gene_max
         }
         
         #sort by phase shift

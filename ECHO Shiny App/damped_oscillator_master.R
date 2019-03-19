@@ -1,6 +1,6 @@
 # Extended Oscillations Function Source
 # By Hannah De los Santos
-# ECHO v 3.0
+# ECHO v 3.1
 # Code description: Contains all the funcitons for extended harmonic oscillator work, in order to have less confusion between scripts.
 
 # function to represent damped oscillator with phase and equilibrium shift formula
@@ -122,6 +122,7 @@ jackknife <- function(temp, parameters, num_reps, start_param){
                                               weights = w))
     }
     
+    # store all parameters
     for (p in 1:5){
       all_pars[[p]] <- c(all_pars[[p]],all_fits[[i]]$m$getAllPars()[p])
     }
@@ -156,7 +157,10 @@ jackknife <- function(temp, parameters, num_reps, start_param){
 #  high: the lowest frequency we are looking for, in radians (highest period)
 #  rem_unexpr: logical indicating whether genes with less than rem_unexpr_amt % expression should not be considered
 #  rem_unexpr_amt: percentage of expression for which genes should not be considered
-#  jtklist: contains the exact p-value distribution for replicate data
+#  run_conf: boolean of whether or not to run confidence intervals
+#  which_conf: string of which type of confidence interval to compute
+#  harm_cut: postive number indicating the cutoff for a gene to be considered harmonic
+#  over_cut: postive number indicating the cutoff for a gene to be considered repressed/overexpressed
 #  results, a data frame which contains:
 #   gene: gene name
 #   conv: did the fit converge, or descriptor of type of data (constant, unexpressed, etc.)
@@ -171,9 +175,10 @@ jackknife <- function(temp, parameters, num_reps, start_param){
 #   tau: Kendall's tau between original and fitted values
 #   y_shift: Equilibrium shift for fit
 #   pval: P-value calculated based on Kendall's tau
+#   (ci_int: confidence for each parameter)
 #   original.values: original values for gene
 #   fitted.values: fitted values for gene
-calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,rem_unexpr_amt=70,run_conf = F, harm_cut = .03, over_cut = .15){
+calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,rem_unexpr_amt=70,run_conf = F, which_conf = "Bootstrap", harm_cut = .03, over_cut = .15){
   
   if (run_conf){
     ci_int <- rep(NA, 10)
@@ -549,7 +554,14 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     y_shift <- parameters[5]
     
     if (run_conf){
-      ci_int <- jackknife(temp, parameters, num_reps, start_param)
+      if (which_conf == "Bootstrap"){
+        ci_int <- c(nlsBoot(oscillator.fit)$bootCI[,2], nlsBoot(oscillator.fit)$bootCI[,3])
+        par_names <- c("gam","a","omega","phi","y_shift")
+        ci_names <- c(paste0("ci_low_",par_names), paste0("ci_high_",par_names))
+        names(ci_int) <- ci_names
+      } else {
+        ci_int <- jackknife(temp, parameters, num_reps, start_param)
+      }
     }
     
     # calculating whether (over)damped, (over)forced, harmonic
