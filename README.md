@@ -45,6 +45,7 @@ install.packages("iterators")
 install.packages("doSNOW")
 install.packages("colorRamps")
 install.packages("fields")
+install.packages("nlstools")
 ```
 
 This will install these packages (a set of functions that this application uses) onto your computer. This may ask for your input, so just say yes to the questions asked. If you run into errors saying “yes,” just say no instead. Note: this may take some time.
