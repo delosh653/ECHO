@@ -1,6 +1,6 @@
 # Extended Oscillations Function Source
 # By Hannah De los Santos
-# ECHO v 3.1
+# ECHO v 3.2
 # Code description: Contains all the funcitons for extended harmonic oscillator work, in order to have less confusion between scripts.
 
 # function to represent damped oscillator with phase and equilibrium shift formula
@@ -144,6 +144,101 @@ jackknife <- function(temp, parameters, num_reps, start_param){
 }
 
 
+# function to calculate the variance of replicates at a certain time point for bootstrapping
+# inputs:
+#  x: time point
+#  boot_gene: gene time course being examined
+#  num_reps: number of replicates
+# outputs:
+#  the variance of replicates at a certain time point
+calc_var_boot <- function(x, boot_gene, num_reps){
+  eps <- 1e-7 # slight adjustment for 0 variance case
+  std2 <- var(unlist(boot_gene[c(x:(num_reps+x))]), na.rm = TRUE) # calc variance
+  if (is.na(std2)){ # possible bug for NA
+    std2 <- 1
+  }
+  return(1/(std2+eps))
+}
+
+# function to calculate the weights for replicate fitting for bootstrapping (these weights are the inverse of the variance at each time point)
+# inputs:
+#  boot_gene: gene time course being examined
+#  num_reps: number of replicates
+# outputs:
+#  the variance of replicates at a certain time point
+calc_weights_boot <- function(boot_gene, num_reps){
+  return(sapply(seq(1,length(boot_gene), by = num_reps), function(x) calc_var_boot(x,boot_gene,num_reps)))
+}
+
+# function to find confidence intervals by the standard jackknifing method (leave one out)
+# inputs:
+#  temp: data frame with time points, y values, and weights (if used)
+#  fit: original fit data
+#  parameters: parameters found by full nlsLM fit
+#  num_reps: number of replicates
+#  start_param: list of starting parameters for fits
+#  current_gene: row number of gene being examined
+#  seed: random seed to set for reproducibility
+# outputs:
+#  confidence intervals for each parameter, low and then high
+bootstrap <- function(temp, fit, start_param, num_reps, current_gene, seed){
+  #this copy should be avoided if you have big data, but I don't have time right now:
+  df <- temp
+  df$fitted <- fitted(fit)
+  df$resid <- residuals(fit)
+  fun <- function(df, inds) {
+    # get the new bootstrapped values
+    df$bootGPP <- df$fitted + df$resid[inds]
+    
+    
+    tryCatch({
+      if (num_reps > 1){
+        # get new weights based on these
+        w <- rep(calc_weights_boot(df$bootGPP, num_reps), each = num_reps)
+        df$w <- w[!is.na(genes[current_gene,-1])]
+        
+        suppressWarnings(coef(nlsLM(bootGPP ~ alt_form(a,gam,omega,phi,y_shift,t),
+                                      data=df,
+                                      start=start_param,
+                                      lower=c(-Inf, -Inf, high, -Inf, min(temp$y)),
+                                      upper=c(Inf, Inf, low, Inf, max(temp$y)),
+                                      control = nls.lm.control(maxiter = 1000, maxfev = 2000,
+                                                               ftol=1e-6, ptol=1e-6, gtol=1e-6),
+                                      weights = w)))
+      } else {
+        suppressWarnings(coef(nlsLM(bootGPP ~ alt_form(a,gam,omega,phi,y_shift,t),
+                                    data=df,
+                                    start=start_param,
+                                    lower=c(-Inf, -Inf, high, -Inf, min(temp$y)),
+                                    upper=c(Inf, Inf, low, Inf, max(temp$y)),
+                                    control = nls.lm.control(maxiter = 1000, maxfev = 2000,
+                                                             ftol=1e-6, ptol=1e-6, gtol=1e-6))))
+      }
+      }, error = function(e){
+        return(unlist(start_param))
+      })
+  }
+  
+  set.seed(seed)
+  b <- boot(df, fun, R = 999)
+  # get the 95% confidence intervals
+  par_names <- c("gam","a","omega","phi","y_shift")
+  ci_names <- c(paste0("ci_low_",par_names), paste0("ci_high_",par_names))
+  ci_int <- 1:(2*5)
+  for (p in 1:5){
+    bci <- boot.ci(b, index=p, type = "perc")
+    
+    if (!is.null(bci)){
+      ci_int[p] <- bci$percent[4]
+      ci_int[p+5] <- bci$percent[5]
+    } else { # if there's no variation in the parameter - fixed interval
+      ci_int[p] <- ci_int[p+5] <- b$t0[3]
+    }
+  }
+  
+  return(ci_int)
+}
+
 # Function to calculate the parameters for the extended harmonic oscillator equation for a specific gene.
 #
 #  current_gene: row number of current gene we want to calculate parameters for
@@ -161,6 +256,7 @@ jackknife <- function(temp, parameters, num_reps, start_param){
 #  which_conf: string of which type of confidence interval to compute
 #  harm_cut: postive number indicating the cutoff for a gene to be considered harmonic
 #  over_cut: postive number indicating the cutoff for a gene to be considered repressed/overexpressed
+#  seed: number for random seed to fix for bootstrapping for confidence intervals
 #  results, a data frame which contains:
 #   gene: gene name
 #   conv: did the fit converge, or descriptor of type of data (constant, unexpressed, etc.)
@@ -178,7 +274,7 @@ jackknife <- function(temp, parameters, num_reps, start_param){
 #   (ci_int: confidence for each parameter)
 #   original.values: original values for gene
 #   fitted.values: fitted values for gene
-calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,rem_unexpr_amt=70,run_conf = F, which_conf = "Bootstrap", harm_cut = .03, over_cut = .15){
+calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,rem_unexpr_amt=70,run_conf = F, which_conf = "Bootstrap", harm_cut = .03, over_cut = .15, seed = 30){
   
   if (run_conf){
     ci_int <- rep(NA, 10)
@@ -510,6 +606,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     phi0 <- (which.min(abs(min_vect))-1)*pi/6 # intial value for phase shift
     
     start_param <- list(gam=gam0,a=a0,omega=w0,phi=phi0,y_shift=y0)
+    temp <- data.frame()
     if (num_reps == 1){ # one replicate
       # put the times into a data frame
       temp <- data.frame(y=t(y_val),t=times)
@@ -523,6 +620,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
                                                upper=c(Inf, Inf, low, Inf, max(temp$y)),
                                                control = nls.lm.control(maxiter = 1000, maxfev = 2000,
                                                                         ftol=1e-6, ptol=1e-6, gtol=1e-6)))
+      
     } else{ # multiple replicates
       #put the times and data point into a data frame
       weights <- calc_weights(current_gene,num_reps)
@@ -555,10 +653,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     
     if (run_conf){
       if (which_conf == "Bootstrap"){
-        ci_int <- c(nlsBoot(oscillator.fit)$bootCI[,2], nlsBoot(oscillator.fit)$bootCI[,3])
-        par_names <- c("gam","a","omega","phi","y_shift")
-        ci_names <- c(paste0("ci_low_",par_names), paste0("ci_high_",par_names))
-        names(ci_int) <- ci_names
+        ci_int <- bootstrap(temp, oscillator.fit, start_param, num_reps, current_gene, seed)
       } else {
         ci_int <- jackknife(temp, parameters, num_reps, start_param)
       }
@@ -641,7 +736,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     } else {
       results <- cbind(results, rbind(ci_int), rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(rep(NA,length(times))))
     }
-    
+
     return (results)
   })
 }

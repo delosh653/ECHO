@@ -15,7 +15,7 @@ library(iterators)
 library(doSNOW)
 library(colorRamps)
 library(fields)
-library(nlstools)
+library(boot)
 
 #https://stackoverflow.com/questions/3452086/getting-path-of-an-r-script/35842176#35842176
 # set working directory - only works in RStudio (with rstudioapi)
@@ -64,10 +64,10 @@ ui <- fluidPage(
                  div(class="header", checked=NA,
                      ("Required fields, with the exception of example data, are marked with *. Required fields in all cases are marked with **.")),
                  
-                 div(style="display: inline-block; vertical align: center; width: 350px;",
+                 div(style="display: inline-block; vertical-align: center; width: 350px;",
                      fileInput("data_file", "Upload Data File (.csv) *", accept=c(".csv"))),
                  
-                 div(style="display: inline-block; vertical align: top; width: 5px;",
+                 div(style="display: inline-block; vertical-align: top; width: 5px;",
                      actionButton("file_help", icon("question", lib="font-awesome"))),
                  uiOutput("Help_file"),
                  
@@ -112,10 +112,12 @@ ui <- fluidPage(
                  
                  div(style="display: inline-block;",
                      checkboxInput("run_conf", "Compute confidence intervals?", value = FALSE, width = NULL)),
-                 div(style="display: inline-block; width: 110px;",
+                 div(style="display: inline-block; vertical-align:bottom; width: 110px;",
                      selectInput("which_conf", "Type?", c("Bootstrap", "Jackknife"), width = NULL)),
+                 div(style="display: inline-block; vertical-align:top; width: 70px;",
+                     numericInput("seed", "Seed?", value = 30, step = 1, width = NULL)),
                  div(style="display: inline-block; vertical-align:top;  width: 50px;",
-                     actionButton("conf_help", icon("question", lib="font-awesome"))),tags$br(),
+                     actionButton("conf_help", icon("question", lib="font-awesome"))),
                  uiOutput("Help_conf"),
                  
                  div(style="display: inline-block;",
@@ -202,7 +204,7 @@ ui <- fluidPage(
                                                                       "All images created by ECHO using data from:",tags$br(),
                                                                       "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                                                                       tags$br(),tags$br(),
-                                                                      tags$p("ECHO Version 3.1")
+                                                                      tags$p("ECHO Version 3.2")
                                                                       ))
                                                                       )),
                  
@@ -475,7 +477,7 @@ server <- function(input,output){ # aka the code behind the results
     })
     output$Help_conf=renderUI({ # time inputs help
       if(input$conf_help%%2){
-        helpText("Check if you would like 95% confidence intervals to be computed as well, with a choice between bootstrapped and jackknifed computation. Jackknifing is recommended for small amounts of data points. Note: if checked, this will add time to computations.")
+        helpText("Check if you would like 95% confidence intervals to be computed as well, with a choice between bootstrapped and jackknifed computation. You may also change the random seed; this is set for reproducible results. Jackknifing is recommended for small amounts of data points. Note: if checked, this will add time to computations.")
       }
       else{
         return()
@@ -629,6 +631,7 @@ server <- function(input,output){ # aka the code behind the results
         
         run_conf <- input$run_conf
         which_conf <- input$which_conf
+        seed <- input$seed
         harm_cut <- abs(as.numeric(sapply(input$harm_cut, function(x) eval(parse(text=x)))))
         over_cut <- abs(as.numeric(sapply(input$over_cut, function(x) eval(parse(text=x)))))
         
@@ -657,9 +660,14 @@ server <- function(input,output){ # aka the code behind the results
         opts <- list(progress = progress)
         
         # where we put the result
-        total_results <- foreach (i=1:nrow(genes), .combine = rbind, .packages='minpack.lm',.options.snow = opts) %dopar% {
-          calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut)
+        total_results <- foreach (i=1:nrow(genes), .combine = rbind, .packages=c('minpack.lm',"boot"),.options.snow = opts) %dopar% {
+          calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut, seed = seed)
         }
+        
+        
+        # for (i in 1:nrow(genes)){
+        #   print(calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut))
+        # }
         close(pb)
         
         stopCluster(cl) # stop using the clusters
@@ -720,7 +728,8 @@ server <- function(input,output){ # aka the code behind the results
                             "which_conf"=input$which_conf,
                             "harm_cut"=input$harm_cut,
                             "over_cut"=input$over_cut,
-                            "v_num"=3.1) # VERSION NUMBER
+                            "seed"=input$seed,
+                            "v_num"=3.2) # VERSION NUMBER
         
         # jtk run -----
         
@@ -1419,6 +1428,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
           cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
           cat(paste("Run confidence intervals?: ",user_input$run_conf,"\n"))
+          cat(paste("Random seed?: ",user_input$seed,"\n"))
           cat(paste("What type?: ",user_input$which_conf,"\n"))
           cat(paste("Harmonic cutoff: ",user_input$harm_cut,"\n"))
           cat(paste("Overexpressed/Repressed cutoff: ",user_input$over_cut,"\n"))
@@ -1469,6 +1479,7 @@ server <- function(input,output){ # aka the code behind the results
           cat(paste("Normalize data?: ",user_input$is_normal,"\n"))
           cat(paste("Remove linear trend?: ",user_input$is_de_linear_trend,"\n"))
           cat(paste("Run confidence intervals?: ",user_input$run_conf,"\n"))
+          cat(paste("Random seed?: ",user_input$seed,"\n"))
           cat(paste("What type?: ",user_input$which_conf,"\n"))
           cat(paste("Harmonic cutoff: ",user_input$harm_cut,"\n"))
           cat(paste("Overexpressed/Repressed cutoff: ",user_input$over_cut,"\n"))
@@ -1622,15 +1633,16 @@ server <- function(input,output){ # aka the code behind the results
         hm_mat <- hm_mat - all_row_mean
         
         #normalize each row to be between -1 and 1
-        for (i in 1:length(phase)){
-
-          gene_max <- max(abs((hm_mat[i,])),na.rm = TRUE)
-          hm_mat[i,] <- hm_mat[i,]/gene_max
+        if (length(phase) > 0){
+          for (i in 1:length(phase)){
+  
+            gene_max <- max(abs((hm_mat[i,])),na.rm = TRUE)
+            hm_mat[i,] <- hm_mat[i,]/gene_max
+          }
+          
+          #sort by phase shift
+          hm_mat <- hm_mat[order(phase),]
         }
-        
-        #sort by phase shift
-        hm_mat <- hm_mat[order(phase),]
-        
         output$plot_viz <- renderPlot({
           par(mar = c(1,2,1,2))
           image.plot(t(hm_mat),col = blue2yellow(256),xlab = "Hours",ylab = "Expressions",axes=FALSE,lab.breaks=NULL)
