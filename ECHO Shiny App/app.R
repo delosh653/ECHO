@@ -222,7 +222,7 @@ ui <- fluidPage(
                                         ("- Radian.Frequency*: Parameter describing frequency of oscillations, in radians."),tags$br(),
                                         ("- Period*: States the time for one complete oscillation, assumed to be in hours."),tags$br(),
                                         ("- Phase Shift*: Parameter describing the amount the oscillator is shifted, in radians."),tags$br(),
-                                        ("- Hours Shifted: Desribes the amount the oscillator is shifted in hours, calculated from phase shift and fitted period. This is the time of the first peak of the oscillation, relative to starting time."),tags$br(),
+                                        ("- Hours Shifted: Desribes the amount the oscillator is shifted in hours, calculated from phase shift and fitted period. This is the time of the first peak of the oscillation, relative to 0 as determined by the time course entered by the user."),tags$br(),
                                         ("- Equilibrium Value*: Parameter describing the center of the oscillator, i.e. the line the expression oscillates around."),tags$br(),
                                         ("- Tau*: Calculated to determine p-values using Kendall's Tau."),tags$br(),
                                         ("- P-Value*: Significance of ECHO fit, unadjusted."),tags$br(),
@@ -664,10 +664,13 @@ server <- function(input,output){ # aka the code behind the results
           calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut, seed = seed)
         }
         
-        
-        # for (i in 1:nrow(genes)){
-        #   print(calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut))
+        # debugging
+        # total_results <- calculate_param(1, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut)
+        # for (i in 2:nrow(genes)){
+        #  temp <- calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut)
+        #   total_results <- rbind(total_results, temp)
         # }
+        
         close(pb)
         
         stopCluster(cl) # stop using the clusters

@@ -235,6 +235,8 @@ bootstrap <- function(temp, fit, start_param, num_reps, current_gene, seed){
       ci_int[p] <- ci_int[p+5] <- b$t0[3]
     }
   }
+  names(ci_int) <- ci_names
+  
   
   return(ci_int)
 }
@@ -710,8 +712,9 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     # calculate p-value
     ref_wave <- (alt_form(a,gam,omega,phi,y_shift,times)) # fitted values
     all_pred <- rep(ref_wave, each=num_reps)[!is.na(unlist(genes[current_gene,-1]))]
-    pval <- cor.test(all_pred,temp$y, method = "kendall")$p.value
-    tau <- cor.test(all_pred,temp$y, method = "kendall")$estimate
+    testing <- suppressWarnings(cor.test(all_pred,temp$y, method = "kendall"))
+    pval <- testing$p.value
+    tau <- testing$estimate
     
     # list of parameters and other resulting values
     results <- data.frame(gene = gene_n, conv = did_conv, iter = num_iter, gamma = gam, type_gam = type_gam,amplitude = a, omega = omega, period = (2*pi/omega), phase.shift = phi,hours.shifted = phase_hours, y_shift=y_shift, tau = tau, pval = pval, stringsAsFactors = FALSE)
