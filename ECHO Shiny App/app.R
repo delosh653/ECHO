@@ -889,15 +889,19 @@ server <- function(input,output){ # aka the code behind the results
       tr_sub <- tr_sub[!is.na(tr_sub$Period),]
       tr_sub <- tr_sub[tr_sub$Period >= as.numeric(sapply(input$start_range, function(x) eval(parse(text=x)))),]
       
-      JTK_results <- JTK_results[!is.na(JTK_results$PER),]
-      JTK_results <- JTK_results[JTK_results$PER >= as.numeric(sapply(input$start_range, function(x) eval(parse(text=x)))),]
+      if (is_jtk){
+        JTK_results <- JTK_results[!is.na(JTK_results$PER),]
+        JTK_results <- JTK_results[JTK_results$PER >= as.numeric(sapply(input$start_range, function(x) eval(parse(text=x)))),]
+      }
     }
     if (input$end_range != ""){
       tr_sub <- tr_sub[!is.na(tr_sub$Period),]
       tr_sub <- tr_sub[tr_sub$Period <= as.numeric(sapply(input$end_range, function(x) eval(parse(text=x)))),]
       
-      JTK_results <- JTK_results[!is.na(JTK_results$PER),]
-      JTK_results <- JTK_results[JTK_results$PER <= as.numeric(sapply(input$end_range, function(x) eval(parse(text=x)))),]
+      if (is_jtk){
+        JTK_results <- JTK_results[!is.na(JTK_results$PER),]
+        JTK_results <- JTK_results[JTK_results$PER <= as.numeric(sapply(input$end_range, function(x) eval(parse(text=x)))),]
+      }
     }
     
     
