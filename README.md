@@ -4,6 +4,8 @@
 <img src="ECHO Shiny App/www/wc1_Neurospora_Replicates_Unsmoothed.PNG" width="500" />
 </p>
 
+This is the first step in the PAICE (Pipeline for Amplitude Integration of Circadian Exploration) Suite! This suite of tools provides high-throughput applications for circadian, ultradian, and infradian rhythms. The second step, ENCORE, can be found [here](https://github.com/delosh653/ENCORE), and can be run after using the application.
+
 ## README Outline
 
 * Overview
@@ -17,7 +19,7 @@
 
 Note: currently in beta testing. Since this app is currently in development, please check here for updates, especially for an updated ECHO citation.
 
-ECHO (Extended Circadian Harmonic Oscillators) is an R-powered application designed to find and visualize circadian rhythms from your data using extended harmonic oscillators. To read more about our inital work on this project and cite us, see [*Circadian Rhythms in Neurospora Exhibit Biologically Relevant Driven and Damped Harmonic Oscillations*](https://dl.acm.org/citation.cfm?id=3107420&CFID=1006798692&CFTOKEN=88816139) by H. De los Santos et al. (2017) We also can also run another common circadian rhythm detection system, JTK_CYCLE. If you use their detection system, please cite them: [*JTK_CYCLE: an efficient non-parametric algorithm for detecting rhythmic components in genome-scale datasets*](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3119870/) by  ME Hughes et al. (2011)
+ECHO (Extended Circadian Harmonic Oscillators) is an R-powered application designed to find and visualize circadian rhythms from your data using extended harmonic oscillators. To read more about this work and cite us, see [*ECHO: an Application for Detection and Analysis of Oscillators Identifies Metabolic Regulation on Genome-Wide Circadian Output*](https://www.biorxiv.org/content/10.1101/690941v1) by H. De los Santos et al. (2019) To read more about the inital work on this project, see [*Circadian Rhythms in Neurospora Exhibit Biologically Relevant Driven and Damped Harmonic Oscillations*](https://dl.acm.org/citation.cfm?id=3107420&CFID=1006798692&CFTOKEN=88816139) by H. De los Santos et al. (2017) We also can also run another common circadian rhythm detection system, JTK_CYCLE. If you use their detection system, please cite them: [*JTK_CYCLE: an efficient non-parametric algorithm for detecting rhythmic components in genome-scale datasets*](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3119870/) by  ME Hughes et al. (2011)
 
 All images created by ECHO using data from [*Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential*](https://www.ncbi.nlm.nih.gov/pubmed/25362047) by J. Hurley, et al. (2014)
 
