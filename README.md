@@ -32,7 +32,7 @@ Steps:
 2.	~ [Download R](https://www.r-project.org/), if you do not already have it. 
 3.	~ [Download RStudio](https://www.rstudio.com/products/rstudio/download/), if you do not already have it (RStudio Desktop is sufficient).
 4.	Open RStudio.
-5.	~ Copy and paste the following text into the console window (bottom right window of the RStudio Session), then press enter:
+5.	~ Copy and paste the following text into the console window (bottom left window of the RStudio Session), then press enter:
 
 ```r
 install.packages("rstudioapi")
