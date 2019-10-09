@@ -204,7 +204,7 @@ ui <- fluidPage(
                                                                       "All images created by ECHO using data from:",tags$br(),
                                                                       "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                                                                       tags$br(),tags$br(),
-                                                                      tags$p("ECHO Version 3.2")
+                                                                      tags$p("ECHO Version 3.21")
                                                                       ))
                                                                       )),
                  
@@ -544,8 +544,7 @@ server <- function(input,output){ # aka the code behind the results
           colnames(add_row) <- colnames(genes)
           genes <- rbind(genes,add_row)
           add_one <- TRUE # marker for appropriate displays for progress bar
-        }
-        else{
+        } else{
           add_one <- FALSE # marker for appropriate displays for progress bar
         }
         
@@ -637,13 +636,6 @@ server <- function(input,output){ # aka the code behind the results
         
         start.time <- Sys.time() # begin counting time
         
-        # if more than one replicate or requested, an exact distribution is needed
-        #if (num_reps > 1 ){ 
-        # create exact distribution for pvalues
-        # jtklist <- jtkdist(length(timen), reps = num_reps) 
-        # jtk.alt <- list() # preallocate pvalue distribution for missing data
-        #}
-        
         # prepare for parallelism
         cores <- detectCores() # dectect how many processors
         cl <- makeCluster(cores[1]-1) # not to overload your computer, need one for OS
@@ -675,6 +667,7 @@ server <- function(input,output){ # aka the code behind the results
         
         stopCluster(cl) # stop using the clusters
         
+        
         # renaming columns of the final results
         if (!run_conf){
           colnames(total_results) <- c("Gene Name","Convergence","Iterations","Amplitude.Change.Coefficient","Oscillation Type","Initial.Amplitude","Radian.Frequency","Period","Phase Shift","Hours Shifted","Equilibrium Value", "Tau", "P-Value", paste(rep("Original TP",length(rep(timen, each = num_reps))),rep(timen, each = num_reps),rep(".",length(rep(timen, each = num_reps))),rep(c(1:num_reps), length(timen)),sep=""), paste(rep("Fitted TP",length(timen)),timen,sep=""))
@@ -686,6 +679,7 @@ server <- function(input,output){ # aka the code behind the results
         # remove the fake row I added if there is only one gene
         if (add_one){
           total_results <- total_results[-nrow(total_results),]
+          beta <- beta[1]
         }
         
         # add slope
@@ -732,7 +726,7 @@ server <- function(input,output){ # aka the code behind the results
                             "harm_cut"=input$harm_cut,
                             "over_cut"=input$over_cut,
                             "seed"=input$seed,
-                            "v_num"=3.2) # VERSION NUMBER
+                            "v_num"=3.21) # VERSION NUMBER
         
         # jtk run -----
         
