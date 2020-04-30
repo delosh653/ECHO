@@ -34,10 +34,10 @@ avg_rep <- function(current_gene, num_reps){
 #  a matrix of means of gene expressions for replicates
 avg_all_rep <- function(num_reps){
   # originally based on heat map code, but it will work fine here
-  
+
   #get matrix of just the relative expression over time
   hm_mat <- as.matrix(genes[,2:ncol(genes)])
-  
+
   #if there are replicates, average the relative expression for each replicate
   mtx_reps <- list() # to store actual replicate matrix
   mtx_count <- list() # to store how many are NA
@@ -54,7 +54,7 @@ avg_all_rep <- function(num_reps){
   }
   repmtx[repmtx==0] <- NA # to avoid division by 0 and induce NAs if there are no time points available
   hm_mat <- hm_mat/repmtx
-  
+
   return(hm_mat)
 }
 
@@ -97,11 +97,11 @@ jackknife <- function(temp, parameters, num_reps, start_param){
   all_fits <- list()
   all_pars <- vector(mode = "list", 5)
   n <- nrow(temp)
-  
+
   # go through and compute fit for each leave one out
   for (i in 1:nrow(temp)){
     temp_edit <- temp[-i,]
-    
+
     if (num_reps==1){
       all_fits[[i]] <- suppressWarnings(nlsLM(y ~ alt_form(a,gam,omega,phi,y_shift,t),
                                               data=temp_edit,
@@ -121,13 +121,13 @@ jackknife <- function(temp, parameters, num_reps, start_param){
                                                                        ftol=1e-6, ptol=1e-6, gtol=1e-6),
                                               weights = w))
     }
-    
+
     # store all parameters
     for (p in 1:5){
       all_pars[[p]] <- c(all_pars[[p]],all_fits[[i]]$m$getAllPars()[p])
     }
   }
-  
+
   # compute jackknifed confidence intervals
   par_names <- c("gam","a","omega","phi","y_shift")
   ci_names <- c(paste0("ci_low_",par_names), paste0("ci_high_",par_names))
@@ -139,7 +139,7 @@ jackknife <- function(temp, parameters, num_reps, start_param){
     ci_int[p+5] <- mean(ps) + qt(0.975, n-1)*sqrt(var(ps)/n)
   }
   names(ci_int) <- ci_names
-  
+
   return(ci_int)
 }
 
@@ -182,19 +182,20 @@ calc_weights_boot <- function(boot_gene, num_reps){
 # outputs:
 #  confidence intervals for each parameter, low and then high
 bootstrap <- function(temp, fit, start_param, num_reps, current_gene, seed){
-  #this copy should be avoided if you have big data, but I don't have time right now:
   df <- temp
-  df$fitted <- fitted(fit)
-  df$resid <- residuals(fit)
+  df$fitted <- as.numeric(fitted(fit))
+  df$resid <- as.numeric(residuals(fit))
   fun <- function(df, inds) {
     # get the new bootstrapped values
     df$bootGPP <- df$fitted + df$resid[inds]
-    
-    
+
     tryCatch({
       if (num_reps > 1){
         # get new weights based on these
-        w <- rep(calc_weights_boot(df$bootGPP, num_reps), each = num_reps)
+        # insert nas into bootcpp, to stagger weights appropriately
+        boot_var <- as.numeric(genes[current_gene,-1])
+        boot_var[!is.na(boot_var)] <- df$bootGPP
+        w <- rep(calc_weights_boot(boot_var, num_reps), each = num_reps)
         df$w <- w[!is.na(genes[current_gene,-1])]
         
         suppressWarnings(coef(nlsLM(bootGPP ~ alt_form(a,gam,omega,phi,y_shift,t),
@@ -218,7 +219,7 @@ bootstrap <- function(temp, fit, start_param, num_reps, current_gene, seed){
         return(unlist(start_param))
       })
   }
-  
+
   set.seed(seed)
   b <- boot(df, fun, R = 999)
   # get the 95% confidence intervals
@@ -227,7 +228,7 @@ bootstrap <- function(temp, fit, start_param, num_reps, current_gene, seed){
   ci_int <- 1:(2*5)
   for (p in 1:5){
     bci <- boot.ci(b, index=p, type = "perc")
-    
+
     if (!is.null(bci)){
       ci_int[p] <- bci$percent[4]
       ci_int[p+5] <- bci$percent[5]
@@ -236,8 +237,8 @@ bootstrap <- function(temp, fit, start_param, num_reps, current_gene, seed){
     }
   }
   names(ci_int) <- ci_names
-  
-  
+
+
   return(ci_int)
 }
 
@@ -277,19 +278,19 @@ bootstrap <- function(temp, fit, start_param, num_reps, current_gene, seed){
 #   original.values: original values for gene
 #   fitted.values: fitted values for gene
 calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FALSE,is_weighted=FALSE,low,high,rem_unexpr=FALSE,rem_unexpr_amt=70,run_conf = F, which_conf = "Bootstrap", harm_cut = .03, over_cut = .15, seed = 30){
-  
+
   if (run_conf){
     ci_int <- rep(NA, 10)
     par_names <- c("gam","a","omega","phi","y_shift")
     ci_names <- c(paste0("ci_low_",par_names), paste0("ci_high_",par_names))
     names(ci_int) <- ci_names
   }
-  
+
   gene_n <- as.character(genes[current_gene,1]) # gene name
   # first we need to check whether or not the gene is just a straight line
   if (!is_deviating(current_gene)){ # one replicate
     results <- data.frame(gene = gene_n, conv = "No Deviation", iter = NA, gamma = NA, type_gam = NA, amplitude = NA, omega = NA, period = NA, phase.shift = NA, hours.shifted = NA, y_shift=NA,  tau = NA, pval = NA, stringsAsFactors = FALSE)
-    
+
     if (run_conf){
       results <- cbind(results, rbind(ci_int), rbind(as.numeric(as.character(t(genes[current_gene,-1])))), rbind(rep(NA,length(timen))))
     } else {
@@ -297,7 +298,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     }
     return(results)
   }
-  
+
   # then we need to check if < threshold % are expressed (if desired)
   if (rem_unexpr){
     if (rem_unexpr_vect[current_gene]){
@@ -310,14 +311,14 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
       return(results)
     }
   }
-  
+
   # calculating averages for initial values
   if (num_reps == 1){
     y_val <- rbind(as.numeric(as.character(t(genes[current_gene,c(2:ncol(genes))])))) # all the gene values
   } else{
     y_val <- avg_genes[current_gene,] # starting values determined by average of replicates
   }
-  
+
   tryCatch({ # throw exception upon error
     # calculate the amount of peaks
     peaks <- c(); # vector of peak values
@@ -394,7 +395,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
       #     }
       #   }
       # }
-      
+
       for(i in 5:(length(y_val)-4)){
         # deal with complete missingness
         if (suppressWarnings(max(y_val[i-4],y_val[i-3],y_val[i-2],y_val[i-1],y_val[i],y_val[i+1],y_val[i+2],y_val[i+3],y_val[i+4], na.rm = TRUE)) == -Inf | is.na(y_val[i])){
@@ -407,7 +408,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
           counting <- counting+1
         }
       }
-      
+
       # finding peaks for last 4 points
       # deal with complete missingness
       # if (suppressWarnings(max(y_val[(length(y_val)-8):length(y_val)], na.rm = TRUE)) != -Inf){
@@ -483,7 +484,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
           counting <- counting+1
         }
       }
-      
+
       # finding peaks for last 3 points
       # deal with complete missingness
       # if (suppressWarnings(max(y_val[(length(y_val)-4):length(y_val)], na.rm = TRUE)) != -Inf){
@@ -496,7 +497,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
       #     }
       #   }
       # }
-      
+
     } else{
       # finding peaks for first point
       # deal with complete missingness
@@ -510,7 +511,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
       #     }
       #   }
       # }
-      
+
       # go through gene values and find maximum as compared to two surrounding values
       for(i in 2:(length(y_val)-1)){
         # to deal with complete missingness
@@ -523,7 +524,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
           counting <- counting+1
         }
       }
-      
+
       # finding peaks for last 3 points
       # deal with complete missingness
       # if (suppressWarnings(max(y_val[(length(y_val)-2):length(y_val)], na.rm = TRUE)) != -Inf){
@@ -545,7 +546,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     }
     x0 <- min(times) # the x start parameter
     a0 <- max(y_val,na.rm = TRUE) - y0 # mean(y_val) # initial guess for amplitude
-    
+
     # intial value for gamma
     if (length(peaks)==0){ # if there are no peaks, we account for that
       gam0 <- 0
@@ -568,7 +569,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
         gam0 <- -.01
       }
     }
-    
+
     # let frequency depend on amount of peaks = (length(times)*resol/(no of peaks+1 [accounts for phase shift])
     if (length(peaks) == 0){
       if (high == -Inf || low == Inf){
@@ -584,15 +585,15 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     } else{
       w0 <- 2*pi/(length(times)*resol/(length(peaks)))
     }
-    
+
     # can't be outside the specified parameters
     if (w0 > low){
       w0 <- low
     } else if (w0 < high){
       w0 <- high
     }
-    
-    
+
+
     # we estimate our phase shift on the second and third nonmissing points for accuracy
     # if you have less than 3 points nonmissing, I have no hope for you
     second <- which(!is.na(y_val))[2]
@@ -606,14 +607,14 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     }
     # phi0 <- min_i*pi/6 # intial value for phase shift
     phi0 <- (which.min(abs(min_vect))-1)*pi/6 # intial value for phase shift
-    
+
     start_param <- list(gam=gam0,a=a0,omega=w0,phi=phi0,y_shift=y0)
     temp <- data.frame()
     if (num_reps == 1){ # one replicate
       # put the times into a data frame
       temp <- data.frame(y=t(y_val),t=times)
       temp <- temp[!is.na(temp$y),] # remove any missing data points
-      
+
       # fitting
       oscillator.fit <- suppressWarnings(nlsLM(y ~ alt_form(a,gam,omega,phi,y_shift,t),
                                                data=temp,
@@ -622,13 +623,13 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
                                                upper=c(Inf, Inf, low, Inf, max(temp$y)),
                                                control = nls.lm.control(maxiter = 1000, maxfev = 2000,
                                                                         ftol=1e-6, ptol=1e-6, gtol=1e-6)))
-      
+
     } else{ # multiple replicates
       #put the times and data point into a data frame
       weights <- calc_weights(current_gene,num_reps)
       temp <- data.frame(y=cbind(unlist(genes[current_gene,-1])),t=cbind(rep(times,each = num_reps)),w=cbind(rep(weights,each = num_reps)))
       temp <- temp[!is.na(temp$y),] # remove any missing data points
-      
+
       #fitting
       oscillator.fit <- suppressWarnings(nlsLM(y ~ alt_form(a,gam,omega,phi,y_shift,t),
                                                data=temp,
@@ -639,12 +640,12 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
                                                                         ftol=1e-6, ptol=1e-6, gtol=1e-6),
                                                weights = w))
     }
-    
+
     did_conv <- oscillator.fit$convInfo$isConv # did the fit converge
     num_iter <- oscillator.fit$convInfo$finIter # amount of iterations
-    
+
     parameters <- coef(oscillator.fit) #extract parameter estimates
-    
+
     # alt_form parameters:
     # the parameters go in the order of: gam,a,omega,phi,y_shift
     gam <- parameters[1]
@@ -652,7 +653,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     omega <- parameters[3]
     phi <- parameters[4]
     y_shift <- parameters[5]
-    
+
     if (run_conf){
       if (which_conf == "Bootstrap"){
         ci_int <- bootstrap(temp, oscillator.fit, start_param, num_reps, current_gene, seed)
@@ -660,7 +661,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
         ci_int <- jackknife(temp, parameters, num_reps, start_param)
       }
     }
-    
+
     # calculating whether (over)damped, (over)forced, harmonic
     if (gam < -over_cut){
       type_gam <- "Overexpressed"
@@ -673,7 +674,7 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     } else{
       type_gam <- "Repressed"
     }
-    
+
     # calculating the phase shift in terms of period (omega inverse of period)
     if (!is.na(a)){ # all param will either be na or not
       if (a >= 0){ # positive amplitudes
@@ -708,14 +709,14 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
     } else {
       phase_hours <- NA
     }
-    
+
     # calculate p-value
     ref_wave <- (alt_form(a,gam,omega,phi,y_shift,times)) # fitted values
     all_pred <- rep(ref_wave, each=num_reps)[!is.na(unlist(genes[current_gene,-1]))]
     testing <- suppressWarnings(cor.test(all_pred,temp$y, method = "kendall"))
     pval <- testing$p.value
     tau <- testing$estimate
-    
+
     # list of parameters and other resulting values
     results <- data.frame(gene = gene_n, conv = did_conv, iter = num_iter, gamma = gam, type_gam = type_gam,amplitude = a, omega = omega, period = (2*pi/omega), phase.shift = phi,hours.shifted = phase_hours, y_shift=y_shift, tau = tau, pval = pval, stringsAsFactors = FALSE)
     if (!run_conf){
@@ -753,10 +754,10 @@ calculate_param <- function(current_gene,times,resol,num_reps,tied,is_smooth=FAL
 is_deviating_all <- function(){
   #get matrix of just the relative expression over time
   all_reps <- as.matrix(genes[,2:ncol(genes)])
-  
+
   # vector of standard deviations
   all_row_stdev <- sqrt(rowSums((all_reps - rowMeans(all_reps,na.rm = TRUE))^2, na.rm = TRUE)/(dim(all_reps)[2] - 1))
-  
+
   # return vector if there is deviation within the gene values
   return (all_row_stdev != 0)
 }
@@ -771,7 +772,7 @@ genes_unexpressed_all <- function(rem_unexpr_amt, rem_unexpr_amt_below){
   all_reps <- as.matrix(genes[,2:ncol(genes)])
   # get how many genes are expressed for each gene
   tot_expressed <- rowSums(abs(all_reps) > abs(rem_unexpr_amt_below),na.rm = TRUE)
-  
+
   # return true if amount is less than threshold
   return(tot_expressed <= (ncol(all_reps)*rem_unexpr_amt))
 }
@@ -835,12 +836,12 @@ adjust_p_values <- function(pvals){
 #  smoothed data
 smoothing_all_tied <- function(is_weighted, num_reps){
   # originally based on heat map code, but it will work fine here
-  
+
   #get matrix of just the relative expression over time
   all_reps <- as.matrix(genes[,2:ncol(genes)])
-  
+
   if (!is_weighted){
-    
+
     #if there are replicates, average the relative expression for each replicate
     center_reps <- list() # to store actual replicate matrix
     mtx_count <- list() # to store how many are NA
@@ -849,12 +850,12 @@ smoothing_all_tied <- function(is_weighted, num_reps){
       mtx_count[[i]] <- is.na(center_reps[[i]])
       center_reps[[i]][is.na(center_reps[[i]])] <- 0
     }
-    
+
     repmtx_l <- list() # store amount to divide by for each rep
     repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(all_reps))+3 # to store how many we should divide by
     repmtx[,c(1,ncol(repmtx))] <- repmtx[,c(1,ncol(repmtx))] - 1 # we only divide by 2 at edges
   } else{ # weighted averaging
-    
+
     #if there are replicates, average the relative expression for each replicate
     center_reps <- list() # to store actual replicate matrix
     mtx_count <- list() # to store how many are NA
@@ -863,18 +864,18 @@ smoothing_all_tied <- function(is_weighted, num_reps){
       mtx_count[[i]] <- is.na(center_reps[[i]])*2
       center_reps[[i]][is.na(center_reps[[i]])] <- 0
     }
-    
+
     repmtx_l <- list() # store amount to divide by for each rep
     repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(all_reps))+4 # to store how many we should divide by
     repmtx[,c(1,ncol(repmtx))] <- repmtx[,c(1,ncol(repmtx))] - 1 # we only divide by 3 at edges
-    
+
   }
   for (i in 1:num_reps){
     # sum the replicates
     left <- cbind(matrix(0,nrow(all_reps),1),center_reps[[i]][,-ncol(center_reps[[i]])]/2) # left shifted matrix
     right <- cbind(center_reps[[i]][,-1]/2,matrix(0,nrow(genes),1)) # right shifted matrix
     center_reps[[i]] <- left + center_reps[[i]] + right
-    
+
     # figure out how many replicates are actually available for each time point
     left_na <- cbind(matrix(0,nrow(all_reps),1),mtx_count[[i]][,-ncol(mtx_count[[i]])]/2) # left shifted matrix
     right_na <- cbind(mtx_count[[i]][,-1]/2,matrix(0,nrow(genes),1)) # right shifted matrix
@@ -882,7 +883,7 @@ smoothing_all_tied <- function(is_weighted, num_reps){
     # to avoid division by 0 and induce NAs if there are no time points available
     repmtx_l[[i]][repmtx_l[[i]]==0] <- NA
   }
-  
+
   dat <- genes
   for (x in 0:(num_reps-1)){
     dat[,seq(2+x,ncol(genes),by=num_reps)] <- center_reps[[x+1]]/repmtx_l[[x+1]]
@@ -902,13 +903,13 @@ smoothing_all_tied <- function(is_weighted, num_reps){
 smoothing_all_untied <- function(is_weighted, num_reps){
   #get matrix of just the relative expression over time
   all_reps <- as.matrix(genes[,2:ncol(genes)])
-  
+
   if (!is_weighted){
-    
+
     #if there are replicates, average the relative expression for each replicate
     center_reps <- list() # to store actual replicate matrix
     mtx_count <- list() # to store how many are
-    
+
     side_reps <- avg_genes
     mtx_side_count <- is.na(side_reps)
     side_reps[is.na(side_reps)] <- 0
@@ -917,37 +918,37 @@ smoothing_all_untied <- function(is_weighted, num_reps){
       mtx_count[[i]] <- is.na(center_reps[[i]])
       center_reps[[i]][is.na(center_reps[[i]])] <- 0
     }
-    
+
     repmtx_l <- list() # store amount to divide by for each rep
     repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(all_reps))+3 # to store how many we should divide by
     repmtx[,c(1,ncol(repmtx))] <- repmtx[,c(1,ncol(repmtx))] - 1 # we only divide by 3 at edges
   } else{ # weighted averaging
-    
+
     #if there are replicates, average the relative expression for each replicate
     center_reps <- list() # to store actual replicate matrix
     mtx_count <- list() # to store how many are
-    
+
     side_reps <- avg_genes
     mtx_side_count <- is.na(side_reps)
     side_reps[is.na(side_reps)] <- 0
-    
+
     for (i in 1:num_reps){
       center_reps[[i]] <- all_reps[, seq(i,ncol(all_reps), by=num_reps)]*2
       mtx_count[[i]] <- is.na(center_reps[[i]])*2
       center_reps[[i]][is.na(center_reps[[i]])] <- 0
     }
-    
+
     repmtx_l <- list() # store amount to divide by for each rep
     repmtx <- matrix(0L,ncol = length(timen),nrow = nrow(all_reps))+4 # to store how many we should divide by
     repmtx[,c(1,ncol(repmtx))] <- repmtx[,c(1,ncol(repmtx))] - 1 # we only divide by 3 at edges
-    
+
   }
   for (i in 1:num_reps){
     # sum the replicates
     left <- cbind(matrix(0,nrow(genes),1),side_reps[,-ncol(side_reps)]) # left shifted matrix
     right <- cbind(side_reps[,-1],matrix(0,nrow(genes),1)) # right shifted matrix
     center_reps[[i]] <- left + center_reps[[i]] + right
-    
+
     # figure out how many replicates are actually available for each time point
     left_na <- cbind(matrix(0,nrow(all_reps),1),mtx_side_count[,-ncol(mtx_side_count)]) # left shifted matrix
     right_na <- cbind(mtx_side_count[,-1],matrix(0,nrow(genes),1)) # right shifted matrix
@@ -955,7 +956,7 @@ smoothing_all_untied <- function(is_weighted, num_reps){
     # to avoid division by 0 and induce NAs if there are no time points available
     repmtx_l[[i]][repmtx_l[[i]]==0] <- NA
   }
-  
+
   dat <- genes # assigning to dataframe to return
   for (x in 0:(num_reps-1)){
     dat[,seq(2+x,ncol(genes),by=num_reps)] <- center_reps[[x+1]]/repmtx_l[[x+1]]
@@ -969,26 +970,26 @@ smoothing_all_untied <- function(is_weighted, num_reps){
 # outputs:
 #   normalized expression data
 normalize_all <- function(){
-  
+
   #get matrix of just the relative expression over time
   all_reps <- as.matrix(genes[,2:ncol(genes)])
-  
+
   # vector of row means
   all_row_mean <- rowMeans(all_reps, na.rm = TRUE)
   # vector of standard deviations
   all_row_stdev <- sqrt(rowSums((all_reps - rowMeans(all_reps,na.rm = TRUE))^2, na.rm = TRUE)/(dim(all_reps)[2] - 1))
-  
+
   # get the matrix of normalized expressions
   all_reps_normal <- (all_reps - all_row_mean)/all_row_stdev
   # if standard deviation is 0, imposes NA, so this expression shouldn't be considered anyway
   # and is now constant
   all_reps_normal[is.na(all_reps_normal)] <- 0
-  
+
   # create dataframe with normalized expressions
   dat <- genes
   dat[,-1] <- all_reps_normal
   dat[is.na(genes)] <- NA # do not impute missing values
-  
+
   return(list("dat"=dat, "means"=all_row_mean, "stdevs"=all_row_stdev))
 }
 
@@ -1024,7 +1025,7 @@ smoothing_tied <- function(current_gene, is_weighted, num_reps){
     ldat[[x+1]][is.na(genes[current_gene,seq(2+x,ncol(genes),by=num_reps)])] <- NA
     dat[,seq(2+x,ncol(genes),by=num_reps)] <- ldat[[x+1]]
   }
-  
+
   return(dat)
 }
 
@@ -1044,7 +1045,7 @@ smoothing_tied <- function(current_gene, is_weighted, num_reps){
 smoothing_untied <- function(current_gene, is_weighted, num_reps){
   y_val <- avg_rep(current_gene,num_reps) # calculating the average of the technical reps
   y_val <- c(genes[current_gene,1],y_val) # adding the gene name for similarity of index
-  
+
   ldat <- lapply(c(0:(num_reps - 1)), function (x) { # return each replicate in a list of smoothed data
     if (is_weighted){ # (1,2,1) weighted average
       center.dat <- sapply(seq(num_reps+2+x,ncol(genes)-num_reps,by= num_reps), function(z)
@@ -1065,7 +1066,7 @@ smoothing_untied <- function(current_gene, is_weighted, num_reps){
     ldat[[x+1]][is.na(genes[current_gene,seq(2+x,ncol(genes),by=num_reps)])] <- NA
     dat[,seq(2+x,ncol(genes),by=num_reps)] <- ldat[[x+1]]
   }
-  
+
   return(dat)
 }
 
@@ -1079,7 +1080,7 @@ de_linear_trend <- function(current_gene, time_begin, time_end, resol,num_reps,t
     #do linear regression
     trend_test <- lm((y_val) ~ rep_timen)
     coeff <- trend_test$coefficients # resulting coefficients
-    
+
     # detrend the data
     adjusted_y_val <- y_val - (coeff[1] + rep_timen*coeff[2])
     df2 <- cbind(data.frame("Gene.Name" = gene_n),rbind(adjusted_y_val))
@@ -1088,46 +1089,46 @@ de_linear_trend <- function(current_gene, time_begin, time_end, resol,num_reps,t
   } else {
     return (genes[current_gene,])
   }
-  
+
 }
 
 # function to remove linear trend from all data
 de_linear_trend_all <- function(timen,num_reps,tied){
   all_rep <- as.matrix(genes[,-1]) # y values for linear fit
   if (!tied){ # if they're not paired, we just fit an aggregate data model
-    
+
     # x values for linear fit
     xrow <- rep(timen,each=num_reps)
     xmtx <- matrix(rep(xrow,each=nrow(all_rep)),nrow = nrow(all_rep))
-    
+
     # covariance
     cov <- rowSums((all_rep-rowMeans(all_rep,na.rm = TRUE))*(xmtx-rowMeans(xmtx)),na.rm = TRUE)
     # variance
     var <- rowSums((xmtx - rowMeans(xmtx))^2,na.rm = TRUE)
-    
+
     beta <- cov/var
     alph <- rowMeans(all_rep,na.rm = TRUE)-(beta*rowMeans(xmtx))
-    
+
     df <- all_rep-(alph+(beta*xmtx)) # linear fit
   } else { # we have to do the models separately for each replicate
     # preallocate matrix where we put results
     df <- matrix(NA, nrow = dim(all_rep)[1], ncol = dim(all_rep)[2])
-    
+
     # x values for linear fit
     xmtx <- matrix(rep(timen,each=nrow(all_rep)),nrow = nrow(all_rep))
     # preallocating to store slopes
     beta.df <- data.frame(matrix(NA, nrow(genes), num_reps))
     for (i in 1:num_reps){
       each_rep <- all_rep[,seq(i,ncol(all_rep),by=num_reps)]
-      
+
       # covariance
       cov <- rowSums((each_rep-rowMeans(each_rep,na.rm = TRUE))*(xmtx-rowMeans(xmtx)),na.rm = TRUE)
       # variance
       var <- rowSums((xmtx - rowMeans(xmtx))^2,na.rm = TRUE)
-      
+
       beta.df[,i] <- beta <- cov/var
       alph <- rowMeans(each_rep,na.rm = TRUE)-(beta*rowMeans(xmtx))
-      
+
       df[,seq(i,ncol(all_rep),by=num_reps)] <- each_rep -(alph+(beta*xmtx)) # linear fit
     }
     # get average slope for each gene
@@ -1136,9 +1137,9 @@ de_linear_trend_all <- function(timen,num_reps,tied){
   # get the data frame correctly set up for returning
   res_df <- genes
   res_df[,-1] <- df
-  
+
   # now we return the slope and the altered expressions
   res_list <- list("res_df" = res_df, "beta" = beta)
-  
+
   return (res_list)
 }

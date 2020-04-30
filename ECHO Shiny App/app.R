@@ -204,7 +204,7 @@ ui <- fluidPage(
                                                                       "All images created by ECHO using data from:",tags$br(),
                                                                       "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                                                                       tags$br(),tags$br(),
-                                                                      tags$p("ECHO Version 3.21")
+                                                                      tags$p("ECHO Version 3.22")
                                                                       ))
                                                                       )),
                  
@@ -726,7 +726,7 @@ server <- function(input,output){ # aka the code behind the results
                             "harm_cut"=input$harm_cut,
                             "over_cut"=input$over_cut,
                             "seed"=input$seed,
-                            "v_num"=3.21) # VERSION NUMBER
+                            "v_num"=3.22) # VERSION NUMBER
         
         # jtk run -----
         
