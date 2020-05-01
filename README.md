@@ -119,7 +119,7 @@ Rensselaer Polytechnic Institute
 
 **Q:** My data has starting points/ending points/resolution of less than an hour, or a fractional amount of hours! How do I run this through ECHO?
 
-**A:** If you have resolution of less than an hour, please enter the fraction into the box, in the form: numerator/denominator. For example, if my resolution was every 10 minutes (or 6 times every hour), I would enter: 1/6. This fractional form extends to starting and ending points as well. You must enter the fraction, NOT a mixed number. For example, if my starting time was 16 hours, 10 minutes, my starting time would be: 97/6. (This stems from the following calculation: (1/6 x 16) + (1/6))
+**A:** If you have resolution of less than an hour, please enter the fraction into the box, in the form: numerator/denominator. For example, if my resolution was every 10 minutes (or 6 times every hour), I would enter: 1/6. This fractional form extends to starting and ending points as well. You must enter the fraction, NOT a mixed number. For example, if my starting time was 16 hours, 10 minutes, my starting time would be: 97/6. (This stems from the following calculation: (6/6 x 16) + (1/6))
 
 ---
 
