@@ -187,3 +187,13 @@ See problems(...) for more details.
 ```
 In this case, nonnumerical data was intermixed with numerical data (#DIV/0! was where a number or a blank cell should have been). This user would have to go back and change these to the appropriate number or blank space.
 
+---
+
+**Q:** I get the following warning when I try to run my data through ECHO:
+
+```r
+Warning in read.table(file = file, header = header, sep = sep, quote = quote,  :
+  incomplete final line found by readTableHeader on '....csv'
+```
+
+**A:** Double check that your data has a blank line at the end. Text files, including CSVs, need new lines at the end to be read in correctly. Saving your data in a program such as Excel, with no special encodings, will do this for you. You can check this by opening your file in a text editor, such as Notepad. If there is no empty line at the end of the file, please add one.
