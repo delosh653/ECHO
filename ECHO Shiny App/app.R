@@ -204,7 +204,7 @@ ui <- fluidPage(
                                                                       "All images created by ECHO using data from:",tags$br(),
                                                                       "Hurley, J. et al. 2014. PNAS. 111 (48) 16995-17002. Analysis of clock-regulated genes in Neurospora reveals widespread posttranscriptional control of metabolic potential. doi:10.1073/pnas.1418963111 ",
                                                                       tags$br(),tags$br(),
-                                                                      tags$p("ECHO Version 3.22")
+                                                                      tags$p("ECHO Version 4.0")
                                                                       ))
                                                                       )),
                  
@@ -214,8 +214,8 @@ ui <- fluidPage(
                                         
                                         ("ECHO CSV has the following columns:"),tags$br(),
                                         ("- Gene Name: The name of each expression, as entered in the original data file."),tags$br(),
-                                        ("- Convergence: Whether or not ECHO's fitting method converged for each expression. This column will also contain markers for 'No Deviation', which means a constant gene, or 'Unexpressed', if removing unexpressed genes was selected during the run."),tags$br(),
-                                        ("- Iterations: Amount of iterations for ECHO's fitting method."),tags$br(),
+                                        ("- Convergence: In v4.0, this no longer an indicator for convergence; this will only contain FALSE. This column will be repurposed in future versions. This column will also contain markers for 'No Deviation', which means a constant gene, or 'Unexpressed', if removing unexpressed genes was selected during the run."),tags$br(),
+                                        ("- Iterations: In v4.0, this no longer an indicator for iterations. This column will be removed in future versions."),tags$br(),
                                         ("- Amplitude.Change.Coefficient*: Parameter which states the amount of amplitude change over time in the system."),tags$br(),
                                         ("- Oscillation Type*: States the expression's category based on forcing coefficient (forced, damped, harmonic, overexpressed, repressed)."),tags$br(),
                                         ("- Initial.Amplitude*: Parameter describing initial amplitude of expression."),tags$br(),
@@ -228,7 +228,7 @@ ui <- fluidPage(
                                         ("- P-Value*: Significance of ECHO fit, unadjusted."),tags$br(),
                                         ("- BH Adj P-Value*: Significance of ECHO fit, adjusted using the Benjamini-Hochberg criterion. Corrects for multiple hypothesis testing."),tags$br(),
                                         ("- BY Adj P-Value*: Significance of ECHO fit, adjusted using the Benhamini-Yekutieli criterion (more stringent). Corrects for multiple hypothesis testing."),tags$br(),
-                                        ("- Original TPX.R: Your original data for time point (TP) X, and replicate R."),tags$br(),
+                                        ("- Original TPX.R: Your original data for time point (TP) X, and replicate R, along with any selected preprocessing."),tags$br(),
                                         ("- Fitted TPX.R: ECHO's fitted data for time point (TP) X, and replicate R."),tags$br(),tags$br(),
                                         
                                         ("JTK_CYCLE CSV has the following columns:"),tags$br(),
@@ -239,7 +239,7 @@ ui <- fluidPage(
                                         ("- PER: Period of one complete oscillation."),tags$br(),
                                         ("- LAG: Hours delayed for expression."),tags$br(),
                                         ("- AMP: Amplitude."),tags$br(),
-                                        ("- Original data, complete with original names, then follows."),tags$br(),tags$br(),
+                                        ("- Original data, complete with original names, then follows, along with any selected preprocessing."),tags$br(),tags$br(),
                                         
                                         tags$p("The .RData file contains a series of R objects that are necessary for the automatic visualizations on the next tab. These objects include the ECHO and JTK output and user input information.")
                                    )))
@@ -636,11 +636,18 @@ server <- function(input,output){ # aka the code behind the results
         
         start.time <- Sys.time() # begin counting time
         
+        # # debugging
+        # total_results <- calculate_param(1, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut, seed = seed)
+        # for (i in 2:nrow(genes)){
+        #   temp <- calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut, seed = seed)
+        #   total_results <- rbind(total_results, temp)
+        # }
+
         # prepare for parallelism
         cores <- detectCores() # dectect how many processors
         cl <- makeCluster(cores[1]-1) # not to overload your computer, need one for OS
         registerDoSNOW(cl)
-        
+
         # making a progress bar
         if (add_one){
           print(paste("Percentage finished out of",nrow(genes)-1,"expression:"))
@@ -650,23 +657,15 @@ server <- function(input,output){ # aka the code behind the results
         pb <- txtProgressBar(max = nrow(genes), style = 3)
         progress <- function(n) setTxtProgressBar(pb, n)
         opts <- list(progress = progress)
-        
+
         # where we put the result
         total_results <- foreach (i=1:nrow(genes), .combine = rbind, .packages=c('minpack.lm',"boot"),.options.snow = opts) %dopar% {
           calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut, seed = seed)
         }
-        
-        # debugging
-        # total_results <- calculate_param(1, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut)
-        # for (i in 2:nrow(genes)){
-        #  temp <- calculate_param(i, timen, resol, num_reps, tied = tied, is_smooth = is_smooth, is_weighted = is_weighted,low = low,high = high,rem_unexpr = rem_unexpr, rem_unexpr_amt = rem_unexpr_amt, run_conf = run_conf, which_conf = which_conf, harm_cut = harm_cut, over_cut = over_cut)
-        #   total_results <- rbind(total_results, temp)
-        # }
-        
         close(pb)
-        
+
         stopCluster(cl) # stop using the clusters
-        
+
         
         # renaming columns of the final results
         if (!run_conf){
@@ -726,7 +725,7 @@ server <- function(input,output){ # aka the code behind the results
                             "harm_cut"=input$harm_cut,
                             "over_cut"=input$over_cut,
                             "seed"=input$seed,
-                            "v_num"=3.22) # VERSION NUMBER
+                            "v_num"=4.0) # VERSION NUMBER
         
         # jtk run -----
         
@@ -940,7 +939,7 @@ server <- function(input,output){ # aka the code behind the results
     }
     
     # logicals
-    nas_found <- (is.na(tr_sub$Amplitude.Change.Coefficient)) # amount of nas
+    # nas_found <- (is.na(tr_sub$Amplitude.Change.Coefficient)) # amount of nas
     nonconv <- ((tr_sub$Convergence==0)) # amount of results that didn't converge
     nodev <- (tr_sub$Convergence=="No Deviation") # results with no standard deviation deviation
     nodev[is.na(nodev)] <- FALSE # na's are false
@@ -1029,9 +1028,9 @@ server <- function(input,output){ # aka the code behind the results
       }
       else if(input$subset_look == "Nonstarter"){
         if(is_jtk){
-          df<-as.data.frame(cbind(tr_sub[nas_found-nodev,1:end_num],JTK_results[nas_found-nodev,2:4]))
+          df<-as.data.frame(cbind(total_results[is.na(total_results$Convergence),1:end_num],JTK_results[is.na(total_results$Convergence),2:4]))
         } else {
-          df<-as.data.frame(tr_sub[nas_found-nodev,1:end_num])
+          df<-as.data.frame(total_results[is.na(total_results$Convergence),1:end_num])
         }
       }
       else if(input$subset_look == "No Deviation"){
@@ -1330,13 +1329,10 @@ server <- function(input,output){ # aka the code behind the results
         }
         else if(input$subset_look == "Nonstarter"){
           output$text <- renderPrint({
-            summary(tr_sub[nas_found-nodev,input$coeff])
+            "No coefficients available."
           })
           
-          plot_viz<- ggplot(tr_sub[(nas_found-nodev) & !is.na(tr_sub$Amplitude.Change.Coefficient),], aes_string(ggname(input$coeff))) +
-            geom_density()+
-            ggtitle(paste(input$subset_look,": ",input$coeff, sep = ""))+
-            theme(text= element_text(size = 20),plot.title = element_text(hjust = .5))
+          plot_viz<- ggplot()
         }
         else if(input$subset_look == "No Deviation"){
           output$text <- renderPrint({
@@ -1400,7 +1396,7 @@ server <- function(input,output){ # aka the code behind the results
         output$text <- renderPrint({ 
           # generate summary of outputs given by ECHO
           cat(paste("Nonconverged:",sum(nonconv,na.rm=TRUE),"\n"))
-          cat(paste("Nonstarter (i.e., too much noise):", sum(nas_found-nodev,na.rm=TRUE),"\n"))
+          cat(paste("Nonstarter (i.e., too much noise):", sum(is.na(total_results$Convergence)),"\n"))
           cat(paste("Unexpressed:", sum(noexpr,na.rm=TRUE),"\n"))
           cat(paste("No Deviation (constant):",sum(nodev,na.rm=TRUE),"\n"))
           cat(paste("Circadian (ECHO):", sum(circ_us),"\n"))
@@ -1441,7 +1437,7 @@ server <- function(input,output){ # aka the code behind the results
       else{ # generate summary of outputs given by ECHO and JTK
         output$text <- renderPrint({ # generate summary
           cat(paste("Nonconverged:",sum(nonconv,na.rm=TRUE),"\n"))
-          cat(paste("Nonstarter (i.e., too much noise):", sum(nas_found-nodev,na.rm=TRUE),"\n"))
+          cat(paste("Nonstarter (i.e., too much noise):", sum(is.na(total_results$Convergence),na.rm=TRUE),"\n"))
           cat(paste("Unexpressed:", sum(noexpr,na.rm=TRUE),"\n"))
           cat(paste("No Deviation (constant):",sum(nodev,na.rm=TRUE),"\n"))
           cat(paste("Circadian (ECHO):", sum(circ_us),"\n"))
@@ -1642,7 +1638,9 @@ server <- function(input,output){ # aka the code behind the results
           }
           
           #sort by phase shift
-          hm_mat <- hm_mat[order(phase),]
+          if (nrow(hm_mat) > 1){
+            hm_mat <- hm_mat[order(phase),]
+          }
         }
         output$plot_viz <- renderPlot({
           par(mar = c(1,2,1,2))
