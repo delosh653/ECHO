@@ -109,7 +109,7 @@ Minimum versions for packages and sytems used in ECHO are the following:
 
 ## Contact Information and Bug Reporting
 
-As you may have noticed, this is still in beta testing! Therefore, we would love to hear your feedback on the program. For general feedback, email hurlej2@rpi.edu with the subject line "ECHO Feedback".
+We would love to hear your feedback on the program. For general feedback, email hurlej2@rpi.edu with the subject line "ECHO Feedback".
 
 If you run into any errors, please email hurlej2@rpi.edu with the following (subject line: "ECHO Error"): 
 - a short desciption of your problem
